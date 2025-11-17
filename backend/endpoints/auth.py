@@ -37,5 +37,5 @@ def login_handler():
     conn.close()
     if not user or not check_password_hash(user[1], password):
         return jsonify(message="Invalid credentials"), 401
-    token = create_access_token(identity=user[0])
+    token = create_access_token(identity=str(user[0]))
     return jsonify(access_token=token)

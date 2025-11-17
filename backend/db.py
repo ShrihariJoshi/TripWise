@@ -72,6 +72,7 @@ def create_tables():
                 date DATE NOT NULL
     );
     """)
+    
     conn.commit()
     cur.close()
     conn.close()
