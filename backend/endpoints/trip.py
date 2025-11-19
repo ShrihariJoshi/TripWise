@@ -17,8 +17,8 @@ def trip_handler():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    created_by=cur.execute("SELECT id FROM users WHERE username = %s", (created_by_username,))
-    print(created_by)
+    cur.execute("SELECT id FROM users WHERE username = %s", (created_by_username,))
+    created_by = cur.fetchone()[0]
     cur.execute(
         "INSERT INTO trips (trip_name, start_date, end_date, destination, created_by, trip_budget) VALUES (%s, %s, %s, %s, %s, %s)",
         (trip_name, start_date, end_date, destination, created_by, trip_budget)
@@ -32,14 +32,18 @@ def join_trip_handler():
     username = data.get("username")
     tripname = data.get("tripname")
     role = data.get("role")
-
+    print(username,tripname,role)
     if not (username and tripname and role):
         return jsonify(message="missing fields"), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
-    user_id=cur.execute("SELECT id FROM users WHERE username = %s", (username,))
-    trip_id=cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (tripname,))
+    cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+    user_id = cur.fetchone()[0]
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (tripname,))
+    trip_id = cur.fetchone()[0]
+
+    print(user_id,trip_id)
     cur.execute(
         "INSERT INTO TripMember (user_id, trip_id, role) VALUES (%s, %s, %s)",
         (user_id, trip_id, role)
