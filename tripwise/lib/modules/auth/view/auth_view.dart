@@ -32,7 +32,6 @@ class _AuthViewState extends State<AuthView> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<AuthController>();
-
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 40,
@@ -47,93 +46,180 @@ class _AuthViewState extends State<AuthView> {
       backgroundColor: bgColor,
       body: Center(
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xffD7D7D7)),
-            borderRadius: BorderRadius.circular(24),
-            color: bgColor,
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.grey,
-                blurRadius: 32,
-                spreadRadius: 4,
-                offset: Offset(0, 4),
-              )
-            ],
-          ),
+              border: Border.all(
+                color: const Color(0xffD7D7D7),
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(24.0),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.grey,
+                  offset: Offset(0, 4),
+                  spreadRadius: 4,
+                  blurRadius: 32,
+                )
+              ],
+              color: bgColor),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
                   SvgPicture.asset(
                     'assets/icons/file.svg',
-                    height: 90,
+                    height: 100,
+                    width: 100,
                     color: darkTeal,
                   ),
                   const SizedBox(width: 20),
-                  robotoText(
-                    controller.pageName.value == 'login'
-                        ? 'Login'
-                        : 'Sign up',
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    color: darkTeal,
+                  Center(
+                    child: robotoText(
+                      controller.pageName.value == 'login'
+                          ? 'Login'
+                          : 'Sign up',
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: darkTeal,
+                    ),
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-
-              /// SIGNUP ONLY FIELDS
               Obx(() {
-                if (controller.pageName.value == 'login') {
-                  return const SizedBox.shrink();
-                }
+                return (controller.pageName.value != 'login')
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6.0),
+                              child: robotoText(
+                                "Username",
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            // Username
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 2),
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: const Color(0xffD7D7D7),
+                                      width: 0.8),
+                                  borderRadius: BorderRadius.circular(16)),
+                              child: TextField(
+                                controller: controller.usernameController,
+                                style: inputTextStyle,
+                                cursorHeight: 16,
+                                decoration: InputDecoration(
+                                  hintText: "Enter your username",
+                                  border: InputBorder.none,
+                                  hintStyle: hintTextStyle,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _label("Username"),
-                    _inputBox(
-                      controller: controller.usernameController,
-                      hint: "Enter your username",
-                    ),
-                    const SizedBox(height: 12),
-
-                    _label("Phone Number"),
-                    _inputBox(
-                      controller: controller.phoneNoController,
-                      hint: "Enter your phone number",
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                );
+                            // Phone number
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6.0),
+                              child: robotoText(
+                                "Phone Number",
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 2),
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: const Color(0xffD7D7D7),
+                                      width: 0.8),
+                                  borderRadius: BorderRadius.circular(16)),
+                              child: TextField(
+                                controller: controller.phoneNoController,
+                                keyboardType: TextInputType.phone,
+                                style: inputTextStyle,
+                                cursorHeight: 16,
+                                decoration: InputDecoration(
+                                  hintText: "Enter your phone number",
+                                  border: InputBorder.none,
+                                  hintStyle: hintTextStyle,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12)
+                          ])
+                    : const SizedBox.shrink();
               }),
-
-              /// EMAIL
-              _label("Email"),
-              _inputBox(
-                controller: controller.emailController,
-                hint: "Enter your email",
-                keyboardType: TextInputType.emailAddress,
+              // Email
+              Padding(
+                padding: const EdgeInsets.only(left: 6.0),
+                child: robotoText(
+                  "Email",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                decoration: BoxDecoration(
+                    border:
+                        Border.all(color: const Color(0xffD7D7D7), width: 0.8),
+                    borderRadius: BorderRadius.circular(16)),
+                child: TextField(
+                  controller: controller.emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: inputTextStyle,
+                  cursorHeight: 16,
+                  decoration: InputDecoration(
+                    hintText: "Enter your email",
+                    border: InputBorder.none,
+                    hintStyle: hintTextStyle,
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
 
-              /// PASSWORD
-              _label("Password"),
-              _inputBox(
-                controller: controller.passwordController,
-                hint: "Enter your password",
-                obscure: true,
+              // Password
+              Padding(
+                padding: const EdgeInsets.only(left: 6.0),
+                child: robotoText(
+                  "Password",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-
-              const SizedBox(height: 36),
-
-              /// SUBMIT BUTTON
+              const SizedBox(height: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                decoration: BoxDecoration(
+                    border:
+                        Border.all(color: const Color(0xffD7D7D7), width: 0.8),
+                    borderRadius: BorderRadius.circular(16)),
+                child: TextField(
+                  controller: controller.passwordController,
+                  obscureText: true,
+                  style: inputTextStyle,
+                  cursorHeight: 16,
+                  decoration: InputDecoration(
+                    hintText: "Enter your password",
+                    border: InputBorder.none,
+                    hintStyle: hintTextStyle,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
               GestureDetector(
                 onTap: () async {
                   if (controller.pageName.value == 'login') {
@@ -141,69 +227,28 @@ class _AuthViewState extends State<AuthView> {
                   } else {
                     await controller.registerUser();
                   }
-
-                  /// ✅ UI FLOW: Auth → Home
-                  Get.offAll(() => const HomeView());
+                  // Optionally navigate on success
+                  // Get.to(() => HomeView());
                 },
                 child: Container(
-                  width: double.infinity,
                   padding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: lightTeal,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: robotoText(
-                    controller.pageName.value == 'login'
-                        ? "Login"
-                        : "Sign up",
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    textAlign: TextAlign.center,
-                  ),
+                      controller.pageName.value == "login"
+                          ? "Login"
+                          : "Sign up",
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      textAlign: TextAlign.center),
                 ),
-              ),
+              )
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  /// SMALL HELPERS (keeps UI clean)
-  Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 6),
-      child: robotoText(
-        text,
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
-  Widget _inputBox({
-    required TextEditingController controller,
-    required String hint,
-    bool obscure = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xffD7D7D7), width: 0.8),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboardType,
-        cursorHeight: 16,
-        style: inputTextStyle,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          hintStyle: hintTextStyle,
         ),
       ),
     );
