@@ -24,6 +24,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.2.2
   get: ^4.7.2
+  uuid: ^4.4.0
+  flutter_svg: ^2.2.2
+  get: ^4.7.2
   google_fonts: ^6.3.2
   dio: ^5.9.0
   jwt_decoder: ^2.0.1
