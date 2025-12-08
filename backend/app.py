@@ -21,6 +21,7 @@ app.add_url_rule("/trip", view_func=trip_handlers.trip_handler, methods=["POST"]
 app.add_url_rule("/join_trip", view_func=trip_handlers.join_trip_handler, methods=["POST"])
 app.add_url_rule("/expense", view_func=expense_handlers.expense_handler, methods=["POST"])
 app.add_url_rule("/expense_share", view_func=expense_handlers.expense_share_handler, methods=["POST"])
+app.add_url_rule("/splits", view_func=expense_handlers.get_settlement_json, methods=["GET"])
 
 @app.get("/me")
 @jwt_required()
