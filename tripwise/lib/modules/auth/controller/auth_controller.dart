@@ -19,6 +19,7 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    Get.put(() => CacheService(), permanent: true);
   }
 
   /// Login using email + password
