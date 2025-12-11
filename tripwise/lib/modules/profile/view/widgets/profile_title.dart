@@ -1,56 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tripwise/data/config/colors.dart';
+import 'package:tripwise/data/config/text_styles.dart';
 
 class ProfileTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  final VoidCallback onEdit;
 
   const ProfileTile({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
-    required this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: Colors.teal.shade50,
-            child: Icon(icon, color: Colors.teal),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: lightTeal.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: darkTeal, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(
-                        fontSize: 13, color: Colors.grey)),
-                const SizedBox(height: 4),
-                Text(value,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500)),
+                robotoText(label, fontSize: 13, color: const Color(0xff888888)),
+
+                robotoText(
+                  value,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xff333333),
+                ),
               ],
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit, size: 18),
-            onPressed: onEdit,
           ),
         ],
       ),

@@ -4,6 +4,7 @@ import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
 import 'package:tripwise/modules/auth/controller/auth_controller.dart';
 import 'package:tripwise/modules/auth/view/login_choice_screen.dart';
+import 'package:tripwise/modules/home/view/home_view.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -21,14 +22,17 @@ class _SplashViewState extends State<SplashView>
   void initState() {
     super.initState();
     Get.put(AuthController());
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 8));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    );
     _progress = CurvedAnimation(parent: _controller, curve: Curves.linear);
     _controller.forward();
     // Navigate to home screen after 3s
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        Get.to(() => const LoginChoiceScreen());
+        // Get.to(() => const LoginChoiceScreen());
+        Get.off(() => const HomeView());
       }
     });
   }
@@ -42,42 +46,41 @@ class _SplashViewState extends State<SplashView>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 0,
+      appBar: AppBar(toolbarHeight: 0),
+      backgroundColor: bgColor,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('assets/images/TripWiseLogo.png'),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40.0),
+              child: AnimatedBuilder(
+                animation: _progress,
+                builder: (context, child) {
+                  return LinearProgressIndicator(
+                    value: _progress.value,
+                    minHeight: 6,
+                    backgroundColor: Colors.grey.shade200,
+                    color: darkTeal,
+                    borderRadius: BorderRadius.circular(24),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: robotoText(
+                "Welcome to TripWise!\nTrip Planning and Expense Tracking made easier",
+                fontSize: 16,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
-        backgroundColor: bgColor,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset('assets/images/TripWiseLogo.png'),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40.0),
-                child: AnimatedBuilder(
-                  animation: _progress,
-                  builder: (context, child) {
-                    return LinearProgressIndicator(
-                      value: _progress.value,
-                      minHeight: 6,
-                      backgroundColor: Colors.grey.shade200,
-                      color: darkTeal,
-                      borderRadius: BorderRadius.circular(24),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: robotoText(
-                  "Welcome to TripWise!\nTrip Planning and Expense Tracking made easier",
-                  fontSize: 16,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ));
+      ),
+    );
   }
 }

@@ -222,13 +222,13 @@ class _AuthViewState extends State<AuthView> {
               const SizedBox(height: 40),
               GestureDetector(
                 onTap: () async {
-                  if (controller.pageName.value == 'login') {
-                    await controller.loginUser();
-                  } else {
-                    await controller.registerUser();
-                  }
+                  // if (controller.pageName.value == 'login') {
+                  //   await controller.loginUser();
+                  // } else {
+                  //   await controller.registerUser();
+                  // }
                   // Optionally navigate on success
-                  // Get.to(() => HomeView());
+                  Get.to(() => HomeView());
                 },
                 child: Container(
                   padding:

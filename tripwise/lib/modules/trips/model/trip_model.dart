@@ -1,7 +1,9 @@
 enum TripStatus { active, upcoming, completed }
 
 class Trip {
-  final String id; // ✅ unique Trip ID
+  final String id; 
+  final String tripName;
+  final String createdBy;
   final String destination;
   final DateTime startDate;
   final DateTime endDate;
@@ -11,6 +13,8 @@ class Trip {
 
   Trip({
     required this.id,
+    required this.tripName,
+    required this.createdBy,
     required this.destination,
     required this.startDate,
     required this.endDate,

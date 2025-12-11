@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:tripwise/data/config/colors.dart';
+import 'package:tripwise/data/config/text_styles.dart';
 import 'package:uuid/uuid.dart';
 import '../model/trip_model.dart';
 
@@ -18,6 +21,139 @@ class TripsController extends GetxController {
 
   final Uuid _uuid = const Uuid();
 
+  @override
+  void onInit() {
+    super.onInit();
+    _loadSampleTrips();
+  }
+
+  /// ----------------------------
+  /// SAMPLE DATA
+  /// ----------------------------
+
+  void _loadSampleTrips() {
+    final now = DateTime.now();
+
+    trips.addAll([
+      // Active Trip 1
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Goa Beach Getaway",
+        createdBy: "You",
+        destination: "Goa, India",
+        startDate: now.subtract(const Duration(days: 2)),
+        endDate: now.add(const Duration(days: 5)),
+        budget: 25000,
+        spent: 12000,
+        members: 4,
+      ),
+
+      // Active Trip 2
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Manali Adventure",
+        createdBy: "Rahul Sharma",
+        destination: "Manali, Himachal Pradesh",
+        startDate: now.subtract(const Duration(days: 1)),
+        endDate: now.add(const Duration(days: 6)),
+        budget: 35000,
+        spent: 8500,
+        members: 3,
+      ),
+
+      // Upcoming Trip 1
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Kerala Backwaters",
+        createdBy: "You",
+        destination: "Alleppey, Kerala",
+        startDate: now.add(const Duration(days: 15)),
+        endDate: now.add(const Duration(days: 20)),
+        budget: 40000,
+        spent: 0,
+        members: 2,
+      ),
+
+      // Upcoming Trip 2
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Rajasthan Heritage Tour",
+        createdBy: "Priya Patel",
+        destination: "Jaipur, Rajasthan",
+        startDate: now.add(const Duration(days: 30)),
+        endDate: now.add(const Duration(days: 37)),
+        budget: 50000,
+        spent: 0,
+        members: 5,
+      ),
+
+      // Upcoming Trip 3
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Ladakh Expedition",
+        createdBy: "Vikram Singh",
+        destination: "Leh, Ladakh",
+        startDate: now.add(const Duration(days: 60)),
+        endDate: now.add(const Duration(days: 70)),
+        budget: 75000,
+        spent: 0,
+        members: 6,
+      ),
+
+      // Completed Trip 1
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Udaipur Weekend",
+        createdBy: "You",
+        destination: "Udaipur, Rajasthan",
+        startDate: now.subtract(const Duration(days: 45)),
+        endDate: now.subtract(const Duration(days: 42)),
+        budget: 18000,
+        spent: 17500,
+        members: 2,
+      ),
+
+      // Completed Trip 2
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Shimla Family Trip",
+        createdBy: "Amit Kumar",
+        destination: "Shimla, Himachal Pradesh",
+        startDate: now.subtract(const Duration(days: 90)),
+        endDate: now.subtract(const Duration(days: 85)),
+        budget: 30000,
+        spent: 28900,
+        members: 4,
+      ),
+
+      // Completed Trip 3
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Rishikesh Yoga Retreat",
+        createdBy: "Neha Gupta",
+        destination: "Rishikesh, Uttarakhand",
+        startDate: now.subtract(const Duration(days: 120)),
+        endDate: now.subtract(const Duration(days: 115)),
+        budget: 22000,
+        spent: 21000,
+        members: 3,
+      ),
+
+      // Completed Trip 4
+      Trip(
+        id: _uuid.v4(),
+        tripName: "Mumbai City Break",
+        createdBy: "You",
+        destination: "Mumbai, Maharashtra",
+        startDate: now.subtract(const Duration(days: 150)),
+        endDate: now.subtract(const Duration(days: 147)),
+        budget: 15000,
+        spent: 15200,
+        members: 1,
+      ),
+    ]);
+  }
+
   /// ----------------------------
   /// TAB LOGIC
   /// ----------------------------
@@ -34,6 +170,7 @@ class TripsController extends GetxController {
   /// ----------------------------
 
   void createTrip({
+    required String tripName,
     required String destination,
     required DateTime startDate,
     required DateTime endDate,
@@ -45,6 +182,8 @@ class TripsController extends GetxController {
 
     final newTrip = Trip(
       id: _uuid.v4(), // ✅ unique trip id
+      tripName: tripName,
+      createdBy: "You", // TODO: Replace with actual user name from auth
       destination: destination,
       startDate: startDate,
       endDate: endDate,
@@ -59,8 +198,12 @@ class TripsController extends GetxController {
 
     Get.snackbar(
       "Trip Created",
-      "Trip to $destination created",
-      snackPosition: SnackPosition.BOTTOM,
+      "Trip '$tripName' created successfully",
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: const Color(0xff4DB6AC),
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
     );
   }
 
@@ -73,55 +216,129 @@ class TripsController extends GetxController {
 
     Get.dialog(
       Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Join Trip",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+              // Header with icon
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: lightTeal.withAlpha(10),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.person_add,
+                      color: darkTeal,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  robotoText(
+                    "Join Trip",
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: darkTeal,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Description
+              robotoText(
+                "Enter the Trip name shared by the trip creator to join",
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+                color: const Color(0xff666666),
               ),
               const SizedBox(height: 16),
-              const Text(
-                "Enter Trip ID",
-                style: TextStyle(fontSize: 14),
+
+              // Input label
+              robotoText(
+                "Trip name",
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xff333333),
               ),
               const SizedBox(height: 8),
+
+              // Input field
               TextField(
                 controller: joinTripController,
+                style: GoogleFonts.roboto(
+                  fontSize: 16,
+                  fontWeight: FontWeight.normal,
+                  color: const Color(0xff333333),
+                  letterSpacing: -0.28,
+                ),
                 decoration: InputDecoration(
-                  hintText: "e.g. 550e8400-e29b-41d4",
+                  hintText: "e.g. coorg_trip_26/12",
+                  hintStyle: GoogleFonts.roboto(
+                    fontSize: 16,
+                    color: const Color(0xff999999),
+                    letterSpacing: -0.28,
+                  ),
+                  prefixIcon: const Icon(Icons.key, color: darkTeal),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: lightTeal, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
+
+              // Buttons
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        if (Get.isDialogOpen ?? false) {
-                          Navigator.of(Get.overlayContext!).pop();
-                        }
-                      },
-                      child: const Text("Cancel"),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: borderColor, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Get.back(),
+                      child: robotoText(
+                        "Cancel",
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xff666666),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
+                        backgroundColor: darkTeal,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: () {
                         final tripId = joinTripController.text.trim();
@@ -129,40 +346,47 @@ class TripsController extends GetxController {
                         if (tripId.isEmpty) {
                           Get.snackbar(
                             "Error",
-                            "Trip ID cannot be empty",
-                            snackPosition: SnackPosition.BOTTOM,
+                            "Trip name cannot be empty",
+                            backgroundColor: Colors.red.shade100,
+                            colorText: Colors.red.shade900,
+                            snackPosition: SnackPosition.TOP,
+                            margin: const EdgeInsets.all(16),
+                            borderRadius: 12,
                           );
                           return;
                         }
 
                         /// 🔁 BACKEND LATER
                         /// For now — just simulate successful join
-                        if (Get.isDialogOpen ?? false) {
-                          Navigator.of(Get.overlayContext!).pop();
-                        }
+                        Get.back();
 
                         Get.snackbar(
-                          "Joined Trip",
-                          "Trip ID: $tripId",
-                          snackPosition: SnackPosition.BOTTOM,
+                          "Success",
+                          "Successfully joined trip!",
+                          backgroundColor: lightTeal,
+                          colorText: Colors.white,
+                          snackPosition: SnackPosition.TOP,
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 12,
                         );
                       },
-                      child: const Text("Join"),
+                      child: robotoText(
+                        "Join Trip",
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
       ),
-      barrierDismissible: false,
+      barrierDismissible: true,
     );
   }
-
-  /// ----------------------------
-  /// CLEANUP
-  /// ----------------------------
 
   @override
   void onClose() {

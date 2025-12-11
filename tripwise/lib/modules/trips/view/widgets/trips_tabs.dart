@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tripwise/data/config/colors.dart';
+import 'package:tripwise/data/config/text_styles.dart';
 import '../../controller/trips_controller.dart';
 import '../../model/trip_model.dart';
 
@@ -10,34 +12,41 @@ class TripsTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => Row(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: Obx(
+        () => Row(
           children: TripStatus.values.map((status) {
             final selected = controller.activeTab.value == status;
             return Expanded(
               child: GestureDetector(
                 onTap: () => controller.setTab(status),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  margin: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: selected ? Colors.teal.shade50 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
+                    color: selected ? darkTeal : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
-                    child: Text(
-                      status.name.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            selected ? FontWeight.bold : FontWeight.w500,
-                        color: selected ? Colors.teal : Colors.grey,
-                      ),
+                    child: robotoText(
+                      status.name[0].toUpperCase() + status.name.substring(1),
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                      color: selected ? Colors.white : const Color(0xff666666),
                     ),
                   ),
                 ),
               ),
             );
           }).toList(),
-        ));
+        ),
+      ),
+    );
   }
 }

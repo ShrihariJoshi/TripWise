@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/modules/home/controller/home_controller.dart';
 import 'package:tripwise/modules/dashboard/view/dashboard_view.dart';
@@ -14,22 +15,19 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
 
-    /// ✅ Each page handles its OWN layout & GradientHeader
     final pages = [
-      const DashboardView(), // Gradient: "TripWise"
-      TripsView(),           // Gradient: "My Trips"
-      const ExpensesView(),  // Gradient: "My Expenses"
-      const ProfileView(),   // Gradient: "Profile"
+      DashboardView(),
+      TripsView(),
+      // ExpensesView(),
+      ProfileView(),
     ];
 
     return Obx(
       () => Scaffold(
         backgroundColor: bgColor,
 
-        /// ✅ Switch between pages
         body: pages[controller.currentIndex.value],
 
-        /// ✅ Bottom navigation only
         bottomNavigationBar: Container(
           decoration: const BoxDecoration(
             boxShadow: [
@@ -37,35 +35,49 @@ class HomeView extends StatelessWidget {
                 color: Colors.black12,
                 blurRadius: 10,
                 offset: Offset(0, -2),
-              )
+              ),
             ],
           ),
-          child: BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: darkTeal,
-            unselectedItemColor: Colors.grey,
-            currentIndex: controller.currentIndex.value,
-            onTap: (index) =>
-                controller.currentIndex.value = index,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: "Home",
+          child: Theme(
+            data: ThemeData(
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+            ),
+            child: BottomNavigationBar(
+              selectedLabelStyle: GoogleFonts.roboto(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                letterSpacing: -0.24,
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.place),
-                label: "Trips",
+              unselectedLabelStyle: GoogleFonts.roboto(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                letterSpacing: -0.24,
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.payments),
-                label: "Expenses",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: "Profile",
-              ),
-            ],
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.white,
+              selectedItemColor: darkTeal,
+              unselectedItemColor: Colors.grey,
+              currentIndex: controller.currentIndex.value,
+              onTap: (index) {
+                controller.currentIndex.value = index;
+              },
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.airplanemode_active),
+                  label: "Trips",
+                ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.payments),
+                //   label: "Expenses"
+                // ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: "Profile",
+                ),
+              ],
+            ),
           ),
         ),
       ),

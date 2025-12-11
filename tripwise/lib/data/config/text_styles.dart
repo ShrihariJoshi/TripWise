@@ -9,6 +9,7 @@ Text robotoText(
   TextAlign textAlign = TextAlign.left,
   TextOverflow? overflow,
   double letterSpacing = -0.28,
+  double? lineHeight,
 }) {
   return Text(
     text,
@@ -17,6 +18,7 @@ Text robotoText(
       fontSize: fontSize,
       fontWeight: fontWeight,
       letterSpacing: letterSpacing,
+      height: lineHeight,
     ),
     overflow: overflow,
     textAlign: textAlign,

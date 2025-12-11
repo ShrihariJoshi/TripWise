@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:tripwise/data/widgets/gradient_header.dart';
+import 'package:tripwise/data/config/colors.dart';
+import 'package:tripwise/data/config/text_styles.dart';
 import '../controller/trips_controller.dart';
 import 'widgets/create_trip_sheet.dart';
 import 'widgets/trips_tabs.dart';
@@ -27,39 +28,86 @@ class TripsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffFAFBFB),
-
-      // ✅ Floating + button
+      backgroundColor: bgColor,
+      // appBar: AppBar(
+      //   title: robotoText(
+      //     "My Trips",
+      //     fontSize: 24,
+      //     fontWeight: FontWeight.bold,
+      //     color: Colors.white,
+      //   ),
+      //   centerTitle: true,
+      //   backgroundColor: darkTeal,
+      //   elevation: 0,
+      //   flexibleSpace: Container(
+      //     decoration: const BoxDecoration(
+      //       gradient: LinearGradient(
+      //         colors: [darkTeal, lightTeal],
+      //         begin: Alignment.topLeft,
+      //         end: Alignment.bottomRight,
+      //       ),
+      //     ),
+      //   ),
+      // ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.teal,
+        backgroundColor: darkTeal,
+        foregroundColor: Colors.white,
+        elevation: 4,
         onPressed: () => _openCreateTrip(context),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 28),
       ),
 
       body: Column(
         children: [
-          /// ✅ Gradient header
-          const GradientHeader(
-            title: "My Trips",
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+            ).copyWith(top: 64, bottom: 12),
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [darkTeal, lightTeal],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: robotoText(
+                "My Trips",
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
+
+          /// ✅ Tabs (Active / Upcoming / Completed)
+          TripsTabs(controller: controller),
 
           /// ✅ Create / Join buttons
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                      backgroundColor: darkTeal,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: () => _openCreateTrip(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text("Create Trip"),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: robotoText(
+                      "Create Trip",
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -67,16 +115,22 @@ class TripsView extends StatelessWidget {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Colors.teal),
+                      side: const BorderSide(color: darkTeal, width: 1.5),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     onPressed: controller.openJoinTripDialog,
-                    icon: const Icon(Icons.person_add, color: Colors.teal),
-                    label: const Text(
+                    icon: const Icon(
+                      Icons.person_add,
+                      color: darkTeal,
+                      size: 18,
+                    ),
+                    label: robotoText(
                       "Join Trip",
-                      style: TextStyle(color: Colors.teal),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: darkTeal,
                     ),
                   ),
                 ),
@@ -84,33 +138,41 @@ class TripsView extends StatelessWidget {
             ),
           ),
 
-          /// ✅ Tabs (Active / Upcoming / Completed)
-          TripsTabs(controller: controller),
-
           /// ✅ Trips List
           Expanded(
-            child: Obx(
-              () {
-                final trips = controller.filteredTrips;
+            child: Obx(() {
+              final trips = controller.filteredTrips;
 
-                if (trips.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      "No trips found",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: trips.length,
-                  itemBuilder: (_, index) {
-                    return TripCard(trip: trips[index]);
-                  },
+              if (trips.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.airplanemode_inactive,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 16),
+                      robotoText(
+                        "No trips found",
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade500,
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                itemCount: trips.length,
+                itemBuilder: (_, index) {
+                  return TripCard(trip: trips[index]);
+                },
+              );
+            }),
           ),
         ],
       ),
