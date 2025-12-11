@@ -8,6 +8,7 @@ from db import get_db_connection
 import endpoints.auth as auth_handlers
 import endpoints.trip as trip_handlers  
 import endpoints.expense as expense_handlers
+import endpoints.itinerary as i_handlers
 
 load_dotenv()
 app = Flask(__name__)
@@ -20,8 +21,11 @@ app.add_url_rule("/login", view_func=auth_handlers.login_handler, methods=["POST
 app.add_url_rule("/trip", view_func=trip_handlers.trip_handler, methods=["POST"])
 app.add_url_rule("/join_trip", view_func=trip_handlers.join_trip_handler, methods=["POST"])
 app.add_url_rule("/expense", view_func=expense_handlers.expense_handler, methods=["POST"])
-app.add_url_rule("/expense_share", view_func=expense_handlers.expense_share_handler, methods=["POST"])
 app.add_url_rule("/splits", view_func=expense_handlers.get_settlement_json, methods=["GET"])
+app.add_url_rule("/iternary-dashboard", view_func=i_handlers.itinerary_handler, methods=["POST"])
+app.add_url_rule("/iternary-details", view_func=i_handlers.get_itinerary_for_trip, methods=["GET"])
+app.add_url_rule("/trip-details", view_func=trip_handlers.get_trip_user, methods=["GET"])
+app.add_url_rule("/user-expenses", view_func=expense_handlers.individual_settlements, methods=["GET"])
 
 @app.get("/me")
 @jwt_required()

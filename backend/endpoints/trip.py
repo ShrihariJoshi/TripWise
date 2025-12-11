@@ -2,6 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token
 from db import get_db_connection
+from datetime import datetime
 
 def trip_handler():
     data = request.get_json() or {}
@@ -52,3 +53,25 @@ def join_trip_handler():
     cur.close()
     conn.close()
     return jsonify(message="Joined trip successfully"), 201
+def get_trip_user():
+    user_name=request.args.get("username")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE username = %s", (user_name,))
+    user_id = cur.fetchone()[0]
+    cur.execute("select tm.trip_id, t.trip_name ,t.destination , t.start_date , t.end_date from trips t inner join TripMember tm on t.trip_id=tm.trip_id where tm.user_id=%s",(user_id,))
+    trips = cur.fetchall()
+    trip_list = []
+    for trip in trips:
+        trip_info = {
+            "trip_id": trip[0],
+            "trip_name": trip[1],
+            "destination": trip[2],
+            "start_date": trip[3],
+            "end_date": trip[4],
+            "status": "completed" if trip[4] < datetime.now().date() else "ongoing"
+        }
+        trip_list.append(trip_info)
+    cur.close()
+    conn.close()
+    return jsonify(trips=trip_list), 200
