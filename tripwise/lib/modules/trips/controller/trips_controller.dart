@@ -46,6 +46,7 @@ class TripsController extends GetxController {
         budget: 25000,
         spent: 12000,
         members: 4,
+        memberNames: ["You", "Rahul Sharma", "Priya Patel", "Vikram Singh"],
       ),
 
       // Active Trip 2
@@ -59,6 +60,7 @@ class TripsController extends GetxController {
         budget: 35000,
         spent: 8500,
         members: 3,
+        memberNames: ["Rahul Sharma", "Amit Kumar", "Neha Gupta"],
       ),
 
       // Upcoming Trip 1
@@ -72,6 +74,7 @@ class TripsController extends GetxController {
         budget: 40000,
         spent: 0,
         members: 2,
+        memberNames: ["You", "Priya Patel"],
       ),
 
       // Upcoming Trip 2
@@ -85,6 +88,13 @@ class TripsController extends GetxController {
         budget: 50000,
         spent: 0,
         members: 5,
+        memberNames: [
+          "Priya Patel",
+          "You",
+          "Rahul Sharma",
+          "Amit Kumar",
+          "Vikram Singh",
+        ],
       ),
 
       // Upcoming Trip 3
@@ -98,6 +108,14 @@ class TripsController extends GetxController {
         budget: 75000,
         spent: 0,
         members: 6,
+        memberNames: [
+          "Vikram Singh",
+          "You",
+          "Rahul Sharma",
+          "Neha Gupta",
+          "Amit Kumar",
+          "Anjali Verma",
+        ],
       ),
 
       // Completed Trip 1
@@ -111,6 +129,7 @@ class TripsController extends GetxController {
         budget: 18000,
         spent: 17500,
         members: 2,
+        memberNames: ["You", "Neha Gupta"],
       ),
 
       // Completed Trip 2
@@ -124,6 +143,7 @@ class TripsController extends GetxController {
         budget: 30000,
         spent: 28900,
         members: 4,
+        memberNames: ["Amit Kumar", "Priya Patel", "Rahul Sharma", "You"],
       ),
 
       // Completed Trip 3
@@ -137,6 +157,7 @@ class TripsController extends GetxController {
         budget: 22000,
         spent: 21000,
         members: 3,
+        memberNames: ["Neha Gupta", "Priya Patel", "Anjali Verma"],
       ),
 
       // Completed Trip 4
@@ -150,6 +171,7 @@ class TripsController extends GetxController {
         budget: 15000,
         spent: 15200,
         members: 1,
+        memberNames: ["You"],
       ),
     ]);
   }

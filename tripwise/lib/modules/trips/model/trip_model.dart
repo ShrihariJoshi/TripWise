@@ -1,7 +1,7 @@
 enum TripStatus { active, upcoming, completed }
 
 class Trip {
-  final String id; 
+  final String id;
   final String tripName;
   final String createdBy;
   final String destination;
@@ -10,6 +10,7 @@ class Trip {
   final double budget;
   final double spent;
   final int members;
+  final List<String> memberNames;
 
   Trip({
     required this.id,
@@ -21,6 +22,7 @@ class Trip {
     required this.budget,
     this.spent = 0,
     this.members = 1,
+    this.memberNames = const [],
   });
 
   String get dateRange =>

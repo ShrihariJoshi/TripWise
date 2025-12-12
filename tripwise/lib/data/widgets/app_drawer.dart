@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tripwise/modules/home/controller/home_controller.dart';
 import 'package:tripwise/modules/profile/view/edit_profile_sheet.dart';
+import 'package:tripwise/modules/settings/view/settings_view.dart';
 import '../config/colors.dart';
 import '../config/text_styles.dart';
 import 'package:tripwise/modules/profile/controller/profile_controller.dart';
@@ -104,8 +106,8 @@ class AppDrawer extends StatelessWidget {
           ),
 
           _DrawerItem(
-            icon: Icons.mail_outline,
-            label: "Invitations",
+            icon: Icons.person_add_alt_outlined,
+            label: "Requests",
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -130,10 +132,11 @@ class AppDrawer extends StatelessWidget {
             icon: Icons.edit,
             label: "Edit profile",
             onTap: () {
+              Get.back();
+              Get.find<HomeController>().currentIndex.value = 2;
               Get.bottomSheet(
                 const EditProfileSheet(),
                 isScrollControlled: true,
-                backgroundColor: Colors.transparent,
               );
             },
           ),
@@ -142,6 +145,7 @@ class AppDrawer extends StatelessWidget {
             label: "Settings",
             onTap: () {
               Get.back();
+              Get.to(() => const SettingsView());
             },
           ),
 

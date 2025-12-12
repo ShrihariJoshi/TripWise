@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
+import 'package:tripwise/modules/settings/view/settings_view.dart';
 import '../controller/profile_controller.dart';
 import 'package:tripwise/modules/profile/view/widgets/profile_title.dart';
 import 'package:tripwise/modules/profile/view/edit_profile_sheet.dart';
@@ -147,7 +148,7 @@ class ProfileView extends StatelessWidget {
                   const SizedBox(height: 20),
                   const Divider(thickness: 2, indent: 20, endIndent: 20),
                   const SizedBox(height: 12),
-                  // Settings Tile
+                  // Edit profile Tile
                   _ActionTile(
                     icon: Icons.edit,
                     label: "Edit profile",
@@ -160,11 +161,13 @@ class ProfileView extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 12),
+
+                  //Settings tile
                   _ActionTile(
                     icon: Icons.settings_outlined,
                     label: "Settings",
                     onTap: () {
-                      // TODO: Navigate to settings
+                      Get.to(() => const SettingsView());
                     },
                   ),
                   const SizedBox(height: 12),
@@ -177,28 +180,165 @@ class ProfileView extends StatelessWidget {
                       // TODO: Navigate to help
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 30),
 
-                  // Logout Tile
-                  _ActionTile(
-                    icon: Icons.logout,
-                    label: "Logout",
-                    color: Colors.red,
+                  GestureDetector(
                     onTap: () {
-                      // TODO: Logout logic
-                      Get.defaultDialog(
-                        title: "Logout",
-                        middleText: "Are you sure you want to logout?",
-                        textConfirm: "Yes",
-                        textCancel: "No",
-                        confirmTextColor: Colors.white,
-                        onConfirm: () {
-                          Get.back();
-                          // TODO: Clear auth and redirect
-                        },
+                      Get.dialog(
+                        Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          backgroundColor: bgColor,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    Icons.logout,
+                                    size: 48,
+                                    color: Colors.red.shade400,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                robotoText(
+                                  "Logout",
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red.shade400,
+                                ),
+                                const SizedBox(height: 12),
+                                robotoText(
+                                  "Are you sure you want to logout?",
+                                  fontSize: 14,
+                                  color: const Color(0xff666666),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                          side: const BorderSide(
+                                            color: borderColor,
+                                            width: 1.5,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        onPressed: () => Get.back(),
+                                        child: robotoText(
+                                          "Cancel",
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xff666666),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red.shade400,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          Get.back();
+                                          // TODO: Clear auth and redirect to login
+                                          Get.snackbar(
+                                            "Logged Out",
+                                            "You have been logged out successfully",
+                                            backgroundColor: lightTeal,
+                                            colorText: Colors.white,
+                                            snackPosition: SnackPosition.TOP,
+                                            margin: const EdgeInsets.all(16),
+                                            borderRadius: 12,
+                                          );
+                                        },
+                                        child: robotoText(
+                                          "Logout",
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       );
                     },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(16),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withAlpha(15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.logout, color: Colors.red),
+                            const SizedBox(width: 4),
+                            robotoText(
+                              "Logout",
+                              fontSize: 16,
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
+
+                  // Logout Tile
+                  // _ActionTile(
+                  //   icon: Icons.logout,
+                  //   label: "Logout",
+                  //   color: Colors.red,
+                  //   onTap: () {
+                  //     // TODO: Logout logic
+                  //     Get.defaultDialog(
+                  //       title: "Logout",
+                  //       middleText: "Are you sure you want to logout?",
+                  //       textConfirm: "Yes",
+                  //       textCancel: "No",
+                  //       confirmTextColor: Colors.white,
+                  //       onConfirm: () {
+                  //         Get.back();
+                  //         // TODO: Clear auth and redirect
+                  //       },
+                  //     );
+                  //   },
+                  // ),
                   const SizedBox(height: 32),
                 ],
               ),

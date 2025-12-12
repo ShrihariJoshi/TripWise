@@ -22,47 +22,30 @@ class DashboardView extends StatelessWidget {
   final double budgetUsed = 1250.50;
   final double totalBudget = 3000.00;
 
-  // Sample expense groups data
-  final List<Map<String, dynamic>> expenseGroups = [
+  // Sample trip expense data
+  final List<Map<String, dynamic>> tripExpenses = [
     {
-      'name': 'Dinner at Le Bistro',
-      'amount': 450.00,
+      'tripName': 'European Adventure',
+      'netAmount': 850.00,
+      'isOwed': false, // false means you owe, true means you're owed
       'isSettled': false,
-      'participants': 4,
-      'paidBy': 'You',
-      'date': 'Dec 13, 2025',
+      'owedTo': ['John', 'Sarah'],
+      'destination': 'Paris, France',
     },
     {
-      'name': 'Hotel Booking',
-      'amount': 2500.00,
+      'tripName': 'Goa Beach Getaway',
+      'netAmount': 1200.00,
+      'isOwed': true, // you are owed
       'isSettled': false,
-      'participants': 2,
-      'paidBy': 'John',
-      'date': 'Dec 12, 2025',
+      'owedBy': ['Mike', 'Alex', 'Emma'],
+      'destination': 'Goa, India',
     },
     {
-      'name': 'Museum Tickets',
-      'amount': 180.00,
+      'tripName': 'Manali Adventure',
+      'netAmount': 0.00,
+      'isOwed': null,
       'isSettled': true,
-      'participants': 4,
-      'paidBy': 'Sarah',
-      'date': 'Dec 11, 2025',
-    },
-    {
-      'name': 'Taxi Ride',
-      'amount': 75.00,
-      'isSettled': true,
-      'participants': 3,
-      'paidBy': 'Mike',
-      'date': 'Dec 10, 2025',
-    },
-    {
-      'name': 'Lunch',
-      'amount': 320.00,
-      'isSettled': true,
-      'participants': 4,
-      'paidBy': 'You',
-      'date': 'Dec 9, 2025',
+      'destination': 'Manali, India',
     },
   ];
 
@@ -434,17 +417,17 @@ class DashboardView extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // Expense Groups List
+                  // Trip Expense List
                   ...(() {
-                    final unsettled = expenseGroups
+                    final unsettled = tripExpenses
                         .where((e) => !e['isSettled'])
                         .toList();
-                    final settled = expenseGroups
+                    final settled = tripExpenses
                         .where((e) => e['isSettled'])
                         .take(2)
                         .toList();
 
-                    // If no unsettled groups, show "All expenses settled" message
+                    // If no unsettled expenses, show "All expenses settled" message
                     if (unsettled.isEmpty) {
                       return [
                         Container(
@@ -476,29 +459,31 @@ class DashboardView extends StatelessWidget {
                           ),
                         ),
                         ...settled.map(
-                          (group) => _ExpenseGroupCard(
-                            name: group['name'],
-                            amount: group['amount'],
-                            isSettled: group['isSettled'],
-                            participants: group['participants'],
-                            paidBy: group['paidBy'],
-                            date: group['date'],
+                          (trip) => _TripExpenseCard(
+                            tripName: trip['tripName'],
+                            destination: trip['destination'],
+                            netAmount: trip['netAmount'],
+                            isOwed: trip['isOwed'],
+                            isSettled: trip['isSettled'],
+                            owedTo: trip['owedTo'],
+                            owedBy: trip['owedBy'],
                           ),
                         ),
                       ];
                     }
 
-                    final displayGroups = [...unsettled, ...settled];
+                    final displayTrips = [...unsettled, ...settled];
 
-                    return displayGroups
+                    return displayTrips
                         .map(
-                          (group) => _ExpenseGroupCard(
-                            name: group['name'],
-                            amount: group['amount'],
-                            isSettled: group['isSettled'],
-                            participants: group['participants'],
-                            paidBy: group['paidBy'],
-                            date: group['date'],
+                          (trip) => _TripExpenseCard(
+                            tripName: trip['tripName'],
+                            destination: trip['destination'],
+                            netAmount: trip['netAmount'],
+                            isOwed: trip['isOwed'],
+                            isSettled: trip['isSettled'],
+                            owedTo: trip['owedTo'],
+                            owedBy: trip['owedBy'],
                           ),
                         )
                         .toList();
@@ -515,29 +500,44 @@ class DashboardView extends StatelessWidget {
   }
 }
 
-/// Expense Group Card Widget
-class _ExpenseGroupCard extends StatelessWidget {
-  final String name;
-  final double amount;
+/// Trip Expense Card Widget
+class _TripExpenseCard extends StatelessWidget {
+  final String tripName;
+  final String destination;
+  final double netAmount;
+  final bool? isOwed; // null if settled, false if you owe, true if you're owed
   final bool isSettled;
-  final int participants;
-  final String paidBy;
-  final String date;
+  final List<dynamic>? owedTo;
+  final List<dynamic>? owedBy;
 
-  const _ExpenseGroupCard({
-    required this.name,
-    required this.amount,
+  const _TripExpenseCard({
+    required this.tripName,
+    required this.destination,
+    required this.netAmount,
+    required this.isOwed,
     required this.isSettled,
-    required this.participants,
-    required this.paidBy,
-    required this.date,
+    this.owedTo,
+    this.owedBy,
   });
 
   @override
   Widget build(BuildContext context) {
+    String peopleText = '';
+    if (!isSettled) {
+      if (isOwed == false && owedTo != null && owedTo!.isNotEmpty) {
+        peopleText = owedTo!.length == 1
+            ? 'You owe ${owedTo![0]}'
+            : 'You owe ${owedTo!.join(', ')}';
+      } else if (isOwed == true && owedBy != null && owedBy!.isNotEmpty) {
+        peopleText = owedBy!.length == 1
+            ? '${owedBy![0]} owes you'
+            : '${owedBy!.join(', ')} owe you';
+      }
+    }
+
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to expense group details
+        // TODO: Navigate to trip expense details
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -561,102 +561,150 @@ class _ExpenseGroupCard extends StatelessWidget {
           children: [
             // Status Icon
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: isSettled
-                    ? const Color(0xffE8F5E9)
-                    : lightTeal.withAlpha(10),
+                    ? const Color(0xffE3F2FD)
+                    : (isOwed == true
+                          ? const Color(0xffE8F5E9)
+                          : const Color(0xffFFEBEE)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
-                isSettled ? Icons.check_circle : Icons.pending,
-                color: isSettled ? const Color(0xff4CAF50) : darkTeal,
-                size: 20,
+                isSettled
+                    ? Icons.check_circle
+                    : (isOwed == true
+                          ? Icons.arrow_downward
+                          : Icons.arrow_upward),
+                color: isSettled
+                    ? const Color(0xff2196F3)
+                    : (isOwed == true ? const Color(0xff4CAF50) : Colors.red),
+                size: 22,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
 
-            // Expense Details
+            // Trip Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: robotoText(
-                          name,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xff333333),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      robotoText(
-                        "₹${amount.toStringAsFixed(2)}",
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isSettled ? const Color(0xff666666) : darkTeal,
-                      ),
-                    ],
+                  robotoText(
+                    tripName,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xff333333),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(
-                        Icons.person_outline,
-                        size: 14,
+                        Icons.location_on,
+                        size: 13,
                         color: Color(0xff888888),
                       ),
                       const SizedBox(width: 4),
-                      robotoText(
-                        "$participants participants",
-                        fontSize: 12,
-                        color: const Color(0xff888888),
-                      ),
-                      const SizedBox(width: 12),
-                      robotoText(
-                        "•",
-                        fontSize: 12,
-                        color: const Color(0xff888888),
-                      ),
-                      const SizedBox(width: 12),
-                      robotoText(
-                        "Paid by $paidBy",
-                        fontSize: 12,
-                        color: const Color(0xff888888),
+                      Expanded(
+                        child: robotoText(
+                          destination,
+                          fontSize: 12,
+                          color: const Color(0xff888888),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  robotoText(
-                    date,
-                    fontSize: 11,
-                    color: const Color(0xff999999),
-                  ),
+                  if (!isSettled && peopleText.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          isOwed == true ? Icons.person : Icons.person_outline,
+                          size: 13,
+                          color: isOwed == true
+                              ? const Color(0xff4CAF50)
+                              : Colors.red,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: robotoText(
+                            peopleText,
+                            fontSize: 12,
+                            color: isOwed == true
+                                ? const Color(0xff4CAF50)
+                                : Colors.red,
+                            fontWeight: FontWeight.w500,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
 
-            // Status Badge
-            if (!isSettled)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withAlpha(10),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange, width: 1),
+            const SizedBox(width: 12),
+
+            // Amount and Status
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (!isSettled)
+                  robotoText(
+                    "${isOwed == true ? '+' : '-'}₹${netAmount.toStringAsFixed(2)}",
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: isOwed == true
+                        ? const Color(0xff4CAF50)
+                        : Colors.red.shade700,
+                  ),
+                if (isSettled)
+                  robotoText(
+                    "Settled",
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xff2196F3),
+                  ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSettled
+                        ? const Color(0xffE3F2FD)
+                        : (isOwed == true
+                              ? const Color(0xffE8F5E9)
+                              : Colors.red.withAlpha(30)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSettled
+                          ? const Color(0xff2196F3)
+                          : (isOwed == true
+                                ? const Color(0xff4CAF50)
+                                : Colors.red),
+                      width: 1,
+                    ),
+                  ),
+                  child: robotoText(
+                    isSettled
+                        ? "Settled"
+                        : (isOwed == true ? "You get" : "You owe"),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isSettled
+                        ? const Color(0xff1976D2)
+                        : (isOwed == true
+                              ? const Color(0xff2E7D32)
+                              : Colors.red.shade700),
+                  ),
                 ),
-                child: robotoText(
-                  "Unsettled",
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.orange,
-                ),
-              ),
+              ],
+            ),
           ],
         ),
       ),

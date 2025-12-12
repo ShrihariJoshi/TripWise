@@ -233,6 +233,7 @@ class _CreateTripSheetState extends State<CreateTripSheet> {
                       child: _DateButton(
                         label: "End Date",
                         date: endDate,
+                        minDate: startDate ?? DateTime.now(),
                         onPick: (d) => setState(() => endDate = d),
                       ),
                     ),
@@ -328,11 +329,13 @@ class _DateButton extends StatelessWidget {
   final String label;
   final DateTime? date;
   final ValueChanged<DateTime> onPick;
+  final DateTime? minDate;
 
   const _DateButton({
     required this.label,
     required this.date,
     required this.onPick,
+    this.minDate,
   });
 
   @override
@@ -341,9 +344,38 @@ class _DateButton extends StatelessWidget {
       onPressed: () async {
         final picked = await showDatePicker(
           context: context,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(2035),
-          initialDate: DateTime.now(),
+          firstDate: minDate ?? DateTime.now(),
+          lastDate: DateTime(DateTime.now().year + 3),
+          initialDate: minDate != null && DateTime.now().isBefore(minDate!)
+              ? minDate!
+              : DateTime.now(),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: darkTeal,
+                  onPrimary: Colors.white,
+                  onSurface: Color(0xff333333),
+                ),
+                textButtonTheme: TextButtonThemeData(
+                  style: TextButton.styleFrom(
+                    foregroundColor: darkTeal,
+                    textStyle: GoogleFonts.roboto(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.28,
+                    ),
+                  ),
+                ),
+                dialogTheme: DialogThemeData(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              child: child!,
+            );
+          },
         );
         if (picked != null) onPick(picked);
       },

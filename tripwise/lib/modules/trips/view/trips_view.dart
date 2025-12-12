@@ -29,33 +29,6 @@ class TripsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
-      // appBar: AppBar(
-      //   title: robotoText(
-      //     "My Trips",
-      //     fontSize: 24,
-      //     fontWeight: FontWeight.bold,
-      //     color: Colors.white,
-      //   ),
-      //   centerTitle: true,
-      //   backgroundColor: darkTeal,
-      //   elevation: 0,
-      //   flexibleSpace: Container(
-      //     decoration: const BoxDecoration(
-      //       gradient: LinearGradient(
-      //         colors: [darkTeal, lightTeal],
-      //         begin: Alignment.topLeft,
-      //         end: Alignment.bottomRight,
-      //       ),
-      //     ),
-      //   ),
-      // ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: darkTeal,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        onPressed: () => _openCreateTrip(context),
-        child: const Icon(Icons.add, size: 28),
-      ),
 
       body: Column(
         children: [
