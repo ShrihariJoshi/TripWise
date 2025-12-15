@@ -25,17 +25,17 @@ def register_handler():
 
 def login_handler():
     data = request.get_json() or {}
-    email = data.get("email")
+    username = data.get("username")
     password = data.get("password")
-    if not (email and password):
+    if not (username and password):
         return jsonify(message="missing fields"), 400
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, password_hash FROM users WHERE email = %s", (email,))
+    cur.execute("SELECT id, password_hash FROM users WHERE username = %s", (username,))
     user = cur.fetchone()
     cur.close()
     conn.close()
     if not user or not check_password_hash(user[1], password):
         return jsonify(message="Invalid credentials"), 401
-    token = create_access_token(identity=user[0])
+    token = create_access_token(identity=str(user[0]))
     return jsonify(access_token=token)
