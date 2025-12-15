@@ -6,7 +6,7 @@ from datetime import datetime
 
 def trip_handler():
     data = request.get_json() or {}
-    trip_name = data.get("trip_name")
+    trip_name = data.get("trip_name").strip()
     start_date = data.get("start_date")
     end_date = data.get("end_date")
     destination = data.get("destination")
@@ -24,7 +24,9 @@ def trip_handler():
         "INSERT INTO trips (trip_name, start_date, end_date, destination, created_by, trip_budget) VALUES (%s, %s, %s, %s, %s, %s)",
         (trip_name, start_date, end_date, destination, created_by, trip_budget)
     )
-    cur.execute("INSERT INTO TripMember (user_id, trip_id, role) VALUES (%s, %s, %s)", (created_by, cur.lastrowid, 'admin'))
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s ", (trip_name,))
+    trip_id=cur.fetchone()[0]
+    cur.execute("INSERT INTO TripMember (user_id, trip_id, role) VALUES (%s, %s, %s)", (created_by,trip_id, 'admin'))
     conn.commit()
     cur.close()
     conn.close()
