@@ -4,8 +4,8 @@ import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
 import 'package:tripwise/modules/trips/view/dashboard/trip_dashboard_view.dart';
 import 'package:tripwise/modules/trips/view/expenses/view/expenses_view.dart';
-import '../../model/trip_model.dart';
-import '../itinerary/itinerary_view.dart';
+import '../model/trip_model.dart';
+import 'itinerary/itinerary_view.dart';
 
 class TripDetailView extends StatefulWidget {
   final Trip trip;

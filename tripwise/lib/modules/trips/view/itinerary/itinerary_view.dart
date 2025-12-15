@@ -83,8 +83,6 @@ class _ItineraryViewState extends State<ItineraryView> {
                             child: _DayItineraryCard(
                               dayItinerary: itinerary[index],
                               dayNumber: index + 1,
-                              onToggleComplete: (eventId) =>
-                                  _toggleEventComplete(eventId),
                               onEdit: (event) => _editEvent(event),
                               onDelete: (eventId) => _deleteEvent(eventId),
                             ),
@@ -102,20 +100,6 @@ class _ItineraryViewState extends State<ItineraryView> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
-  }
-
-  void _toggleEventComplete(String eventId) {
-    setState(() {
-      for (var day in itinerary) {
-        final eventIndex = day.events.indexWhere((e) => e.id == eventId);
-        if (eventIndex != -1) {
-          day.events[eventIndex] = day.events[eventIndex].copyWith(
-            isCompleted: !day.events[eventIndex].isCompleted,
-          );
-          break;
-        }
-      }
-    });
   }
 
   void _editEvent(ItineraryEvent event) {
@@ -911,14 +895,12 @@ class _ItineraryViewState extends State<ItineraryView> {
 class _DayItineraryCard extends StatelessWidget {
   final DayItinerary dayItinerary;
   final int dayNumber;
-  final Function(String) onToggleComplete;
   final Function(ItineraryEvent) onEdit;
   final Function(String) onDelete;
 
   const _DayItineraryCard({
     required this.dayItinerary,
     required this.dayNumber,
-    required this.onToggleComplete,
     required this.onEdit,
     required this.onDelete,
   });
@@ -970,7 +952,6 @@ class _DayItineraryCard extends StatelessWidget {
           return _EventTile(
             event: event,
             isLast: isLast,
-            onToggleComplete: () => onToggleComplete(event.id),
             onEdit: () => onEdit(event),
             onDelete: () => onDelete(event.id),
           );
@@ -983,23 +964,18 @@ class _DayItineraryCard extends StatelessWidget {
 class _EventTile extends StatelessWidget {
   final ItineraryEvent event;
   final bool isLast;
-  final VoidCallback onToggleComplete;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _EventTile({
     required this.event,
     required this.isLast,
-    required this.onToggleComplete,
     required this.onEdit,
     required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-    final status = event.status;
-    final isPastEvent = status != EventStatus.pending;
-
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1011,24 +987,10 @@ class _EventTile extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: status == EventStatus.completed
-                      ? Colors.green
-                      : status == EventStatus.missed
-                      ? Colors.red
-                      : lightTeal,
+                  color: lightTeal,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: status == EventStatus.completed
-                        ? Colors.green
-                        : status == EventStatus.missed
-                        ? Colors.red
-                        : darkTeal,
-                    width: 2,
-                  ),
+                  border: Border.all(color: darkTeal, width: 2),
                 ),
-                child: status == EventStatus.completed
-                    ? const Icon(Icons.check, size: 8, color: Colors.white)
-                    : null,
               ),
               if (!isLast)
                 Expanded(child: Container(width: 2, color: borderColor)),
@@ -1045,14 +1007,7 @@ class _EventTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: status == EventStatus.completed
-                        ? Colors.green.withOpacity(0.3)
-                        : status == EventStatus.missed
-                        ? Colors.red.withOpacity(0.3)
-                        : borderColor,
-                    width: 1,
-                  ),
+                  border: Border.all(color: borderColor, width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1069,46 +1024,6 @@ class _EventTile extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: darkTeal,
                         ),
-                        const SizedBox(width: 12),
-                        // Status Badge
-                        if (isPastEvent)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: status == EventStatus.completed
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  status == EventStatus.completed
-                                      ? Icons.check_circle
-                                      : Icons.cancel,
-                                  size: 14,
-                                  color: status == EventStatus.completed
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                                const SizedBox(width: 4),
-                                robotoText(
-                                  status == EventStatus.completed
-                                      ? 'Completed'
-                                      : 'Missed',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: status == EventStatus.completed
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                              ],
-                            ),
-                          ),
                         const Spacer(),
                         // Action Buttons
                         PopupMenuButton<String>(
@@ -1119,53 +1034,13 @@ class _EventTile extends StatelessWidget {
                           color: bgColor,
 
                           onSelected: (value) {
-                            if (value == 'complete') {
-                              onToggleComplete();
-                            } else if (value == 'edit') {
+                            if (value == 'edit') {
                               onEdit();
                             } else if (value == 'delete') {
                               onDelete();
                             }
                           },
                           itemBuilder: (context) => [
-                            if (isPastEvent && status != EventStatus.completed)
-                              PopupMenuItem(
-                                value: 'complete',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.check_circle,
-                                      size: 18,
-                                      color: Colors.green,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    robotoText(
-                                      'Mark as Completed',
-                                      fontSize: 14,
-                                      color: const Color(0xff333333),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (isPastEvent && status == EventStatus.completed)
-                              PopupMenuItem(
-                                value: 'complete',
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.cancel,
-                                      size: 18,
-                                      color: Colors.red,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    robotoText(
-                                      'Mark as Missed',
-                                      fontSize: 14,
-                                      color: const Color(0xff333333),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             PopupMenuItem(
                               value: 'edit',
                               child: Row(

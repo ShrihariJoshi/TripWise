@@ -86,25 +86,24 @@ class AppDrawer extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          _DrawerItem(
-            icon: Icons.history,
-            label: "Recent Activity",
-            onTap: () {
-              Get.back();
-              // TODO: Navigate later
-            },
-          ),
+          // _DrawerItem(
+          //   icon: Icons.history,
+          //   label: "Recent Activity",
+          //   onTap: () {
+          //     Get.back();
+          //     // TODO: Navigate later
+          //   },
+          // ),
 
-          const Divider(height: 1, indent: 16, endIndent: 16),
+          // const Divider(height: 1, indent: 16, endIndent: 16),
 
-          _DrawerItem(
-            icon: Icons.group_outlined,
-            label: "Manage Groups",
-            onTap: () {
-              Get.back();
-            },
-          ),
-
+          // _DrawerItem(
+          //   icon: Icons.group_outlined,
+          //   label: "Manage Groups",
+          //   onTap: () {
+          //     Get.back();
+          //   },
+          // ),
           _DrawerItem(
             icon: Icons.person_add_alt_outlined,
             label: "Requests",
@@ -126,8 +125,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
-          const Divider(height: 1, indent: 16, endIndent: 16),
-
+          // const Divider(height: 1, indent: 16, endIndent: 16),
           _DrawerItem(
             icon: Icons.edit,
             label: "Edit profile",

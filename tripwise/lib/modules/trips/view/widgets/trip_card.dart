@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
 import '../../model/trip_model.dart';
-import '../detail/trip_detail_view.dart';
+import '../trip_detail_view.dart';
 
 class TripCard extends StatelessWidget {
   final Trip trip;

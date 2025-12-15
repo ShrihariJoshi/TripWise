@@ -7,7 +7,6 @@ class ItineraryEvent {
   final DateTime startTime;
   final DateTime endTime;
   final String? description;
-  final bool isCompleted;
 
   ItineraryEvent({
     required this.id,
@@ -16,7 +15,6 @@ class ItineraryEvent {
     required this.startTime,
     required this.endTime,
     this.description,
-    this.isCompleted = false,
   });
 
   String get timeRange {
@@ -29,12 +27,6 @@ class ItineraryEvent {
 
   Duration get duration => endTime.difference(startTime);
 
-  EventStatus get status {
-    if (isCompleted) return EventStatus.completed;
-    if (endTime.isBefore(DateTime.now())) return EventStatus.missed;
-    return EventStatus.pending;
-  }
-
   ItineraryEvent copyWith({
     String? id,
     String? title,
@@ -42,7 +34,6 @@ class ItineraryEvent {
     DateTime? startTime,
     DateTime? endTime,
     String? description,
-    bool? isCompleted,
   }) {
     return ItineraryEvent(
       id: id ?? this.id,
@@ -51,7 +42,6 @@ class ItineraryEvent {
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       description: description ?? this.description,
-      isCompleted: isCompleted ?? this.isCompleted,
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 enum TripStatus { active, upcoming, completed }
 
 class Trip {
@@ -50,95 +48,63 @@ class Trip {
   }
 }
 
-enum ExpenseCategory {
-  food,
-  transport,
-  accommodation,
-  entertainment,
-  shopping,
-  other,
-}
-
 class Expense {
   final String id;
   final String name;
-  final String description;
   final double amount;
   final String paidBy;
   final List<String> splitBetween;
-  final ExpenseCategory category;
   final DateTime date;
+  final String description;
 
   Expense({
     required this.id,
     required this.name,
     required this.amount,
     required this.paidBy,
-    required this.splitBetween,
-    required this.category,
     required this.date,
+    this.splitBetween = const [],
     this.description = '',
   });
 
+  factory Expense.fromJson(Map<String, dynamic> json) {
+    return Expense(
+      id: json['expense_id']?.toString() ?? '',
+      name: json['description'] ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      paidBy: json['paid_by'] ?? '',
+      date: DateTime.parse(json['date'] ?? DateTime.now().toIso8601String()),
+      description: json['description'] ?? '',
+      splitBetween: [],
+    );
+  }
+
   double get perPersonShare =>
       splitBetween.isEmpty ? 0 : amount / splitBetween.length;
-
-  String getCategoryIcon() {
-    switch (category) {
-      case ExpenseCategory.food:
-        return '🍽️';
-      case ExpenseCategory.transport:
-        return '🚗';
-      case ExpenseCategory.accommodation:
-        return '🏨';
-      case ExpenseCategory.entertainment:
-        return '🎉';
-      case ExpenseCategory.shopping:
-        return '🛍️';
-      case ExpenseCategory.other:
-        return '💰';
-    }
-  }
-
-  String getCategoryName() {
-    switch (category) {
-      case ExpenseCategory.food:
-        return 'Food';
-      case ExpenseCategory.transport:
-        return 'Transport';
-      case ExpenseCategory.accommodation:
-        return 'Accommodation';
-      case ExpenseCategory.entertainment:
-        return 'Entertainment';
-      case ExpenseCategory.shopping:
-        return 'Shopping';
-      case ExpenseCategory.other:
-        return 'Other';
-    }
-  }
-
-  Color getCategoryColor() {
-    switch (category) {
-      case ExpenseCategory.food:
-        return const Color(0xffFF6B6B);
-      case ExpenseCategory.transport:
-        return const Color(0xff4ECDC4);
-      case ExpenseCategory.accommodation:
-        return const Color(0xffFFE66D);
-      case ExpenseCategory.entertainment:
-        return const Color(0xffA8E6CF);
-      case ExpenseCategory.shopping:
-        return const Color(0xffFFAEC9);
-      case ExpenseCategory.other:
-        return const Color(0xff95A5A6);
-    }
-  }
 }
 
 class Settlement {
+  final String id;
   final String from;
   final String to;
   final double amount;
+  final DateTime? date;
 
-  Settlement({required this.from, required this.to, required this.amount});
+  Settlement({
+    required this.from,
+    required this.to,
+    required this.amount,
+    this.id = '',
+    this.date,
+  });
+
+  factory Settlement.fromJson(Map<String, dynamic> json) {
+    return Settlement(
+      id: json['settlement_id']?.toString() ?? '',
+      from: json['from_user']?.toString() ?? '',
+      to: json['to_user']?.toString() ?? '',
+      amount: (json['amount'] ?? 0).toDouble(),
+      date: json['date'] != null ? DateTime.parse(json['date']) : null,
+    );
+  }
 }

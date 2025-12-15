@@ -4,12 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
 import 'package:tripwise/data/services/api_service.dart';
+import 'package:tripwise/modules/profile/controller/profile_controller.dart';
 import 'package:uuid/uuid.dart';
 import '../model/trip_model.dart';
 
 class TripsController extends GetxController {
-
   final api = Get.find<ApiService>();
+
   /// ----------------------------
   /// STATE
   /// ----------------------------
@@ -27,11 +28,66 @@ class TripsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadSampleTrips();
+    // Schedule fetch after build phase completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      fetchTrips();
+    });
   }
 
   /// ----------------------------
-  /// SAMPLE DATA
+  /// FETCH TRIPS FROM BACKEND
+  /// ----------------------------
+
+  Future<void> fetchTrips() async {
+    try {
+      final userName = Get.find<ProfileController>().fullName.value;
+      final response = await api.get('/trip-details?username=$userName');
+
+      if (response['trips'] != null) {
+        final List<dynamic> tripsData = response['trips'];
+
+        trips.clear();
+
+        for (var tripJson in tripsData) {
+          final trip = Trip(
+            id: tripJson['trip_id']?.toString() ?? _uuid.v4(),
+            tripName: tripJson['trip_name'] ?? '',
+            createdBy: tripJson['created_by'] ?? 'Unknown',
+            destination: tripJson['destination'] ?? '',
+            startDate: tripJson['start_date'] != null
+                ? DateTime.parse(tripJson['start_date'])
+                : DateTime.now(),
+            endDate: tripJson['end_date'] != null
+                ? DateTime.parse(tripJson['end_date'])
+                : DateTime.now(),
+            budget: tripJson['trip_budget']?.toDouble() ?? 0.0,
+            spent: tripJson['amount_spent']?.toDouble() ?? 0.0,
+            members: tripJson['members']?.length ?? 0,
+            memberNames: tripJson['members'] != null
+                ? List<String>.from(tripJson['members'])
+                : [],
+          );
+
+          trips.add(trip);
+        }
+      }
+    } catch (e) {
+      // If API fails, load sample trips as fallback
+      _loadSampleTrips();
+      Get.snackbar(
+        "Info",
+        "Loading sample trips",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xff4DB6AC),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    }
+  }
+
+  /// ----------------------------
+  /// SAMPLE DATA (Fallback)
   /// ----------------------------
 
   void _loadSampleTrips() {
@@ -211,7 +267,8 @@ class TripsController extends GetxController {
         'start_date': startDate.toIso8601String(),
         'end_date': endDate.toIso8601String(),
         'destination': destination,
-        'budget': budget,
+        'created_by': 'user1',
+        'trip_budget': budget,
       };
 
       final response = await api.post('/trip', body: body);
@@ -228,7 +285,7 @@ class TripsController extends GetxController {
         endDate: response['end_date'] != null
             ? DateTime.parse(response['end_date'])
             : endDate,
-        budget: response['budget']?.toDouble() ?? budget,
+        budget: response['trip_budget']?.toDouble() ?? budget,
         spent: response['spent']?.toDouble() ?? 0,
         members: response['members'] ?? 1,
         memberNames: response['member_names'] != null

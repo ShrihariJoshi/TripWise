@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 class ProfileController extends GetxController {
-  RxString fullName = 'John Doe'.obs;
+  RxString fullName = 'user1'.obs;
   final email = 'john.doe@email.com'.obs;
   final phone = '+91 6361558082'.obs;
 
