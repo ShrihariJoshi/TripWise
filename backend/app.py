@@ -24,10 +24,11 @@ app.add_url_rule("/join_trip", view_func=trip_handlers.join_trip_handler, method
 app.add_url_rule("/expense", view_func=expense_handlers.expense_handler, methods=["POST"])
 app.add_url_rule("/splits", view_func=expense_handlers.get_settlement_json, methods=["GET"])
 app.add_url_rule("/iternary-dashboard", view_func=i_handlers.itinerary_handler, methods=["POST"])
-app.add_url_rule("/iternary-details", view_func=i_handlers.get_itinerary_for_trip, methods=["GET"])
+app.add_url_rule("/itineary-details", view_func=i_handlers.itinerary_details, methods=["GET"])
 app.add_url_rule("/trip-details", view_func=trip_handlers.get_trip_user, methods=["GET"])
 app.add_url_rule("/user-expenses", view_func=expense_handlers.individual_settlements, methods=["GET"])
 app.add_url_rule("/trip-expense-history", view_func=expense_handlers.get_trip_expense_history, methods=["GET"])
+app.add_url_rule("/mark-done",view_func=expense_handlers.mark_settlement_done, methods=["POST"])
 #app.add_url_rule("/update_profile", view_func=prof_handlers.profile_update_profile, methods=["PATCH"])
 
 
