@@ -176,7 +176,7 @@ def get_settlement_json():
     trip_id = row[0]
 
     cur.execute("""
-        SELECT settlement_id, from_user, to_user, amount, date
+        SELECT settlement_id, from_user, to_user, amount
         FROM settlement
         WHERE trip_id = %s
         ORDER BY settlement_id ASC
@@ -185,12 +185,18 @@ def get_settlement_json():
 
     settlements = []
     for row in rows:
+        cur.execute("SELECT username FROM users WHERE id = %s", (int(row[1]),))
+        from_user_row = cur.fetchone()
+        from_user = from_user_row[0] 
+        cur.execute("SELECT username FROM users WHERE id = %s", (int(row[2]),))
+        to_user_row = cur.fetchone()
+        to_user = to_user_row[0]
+        
         settlements.append({
             "settlement_id": row[0],
-            "from_user": row[1],
-            "to_user": row[2],
+            "from_user": from_user,
+            "to_user": to_user,
             "amount": float(row[3]),
-            "date": str(row[4])
         })
 
     cur.close()
@@ -256,4 +262,40 @@ def individual_settlements():
     return jsonify({
         "username": username,
         "trip_balances": trip_balances
+    })
+def get_trip_expense_history():
+    trip_name = request.args.get("trip_name", "").strip()
+    if not trip_name:
+        return jsonify(message="trip_name parameter is required"), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name,))
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        conn.close()
+        return jsonify(message="Trip not found"), 404
+    trip_id = row[0]
+
+    cur.execute(('''select  Expenses.expense_id, amount, description, username, date 
+                 FROM Expenses ,users WHERE id=paid_by and trip_id = %s ORDER BY date ASC'''), (trip_id,))
+    rows = cur.fetchall()
+
+    expenses = []
+    for row in rows:
+        expenses.append({
+            "expense_id": row[0],
+            "amount": float(row[1]),
+            "description": row[2],
+            "paid_by": row[3],
+            "date": str(row[4]),
+        })
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "trip_name": trip_name,
+        "expenses": expenses
     })

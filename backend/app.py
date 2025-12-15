@@ -9,6 +9,7 @@ import endpoints.auth as auth_handlers
 import endpoints.trip as trip_handlers  
 import endpoints.expense as expense_handlers
 import endpoints.itinerary as i_handlers
+import endpoints.profilemanagement as prof_handlers
 
 load_dotenv()
 app = Flask(__name__)
@@ -26,6 +27,9 @@ app.add_url_rule("/iternary-dashboard", view_func=i_handlers.itinerary_handler, 
 app.add_url_rule("/iternary-details", view_func=i_handlers.get_itinerary_for_trip, methods=["GET"])
 app.add_url_rule("/trip-details", view_func=trip_handlers.get_trip_user, methods=["GET"])
 app.add_url_rule("/user-expenses", view_func=expense_handlers.individual_settlements, methods=["GET"])
+app.add_url_rule("/trip-expense-history", view_func=expense_handlers.get_trip_expense_history, methods=["GET"])
+#app.add_url_rule("/update_profile", view_func=prof_handlers.profile_update_profile, methods=["PATCH"])
+
 
 @app.get("/me")
 @jwt_required()
