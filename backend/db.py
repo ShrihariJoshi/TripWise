@@ -64,16 +64,12 @@ def create_tables():
         trip_id INTEGER REFERENCES trips(trip_id),
         day_number INTEGER NOT NULL,
         title VARCHAR(255) NOT NULL,
-        description TEXT
+        description TEXT,
+        loctation VARCHAR(255),
+        start_time TIME NOT NULL,
+        end_time TIME NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS activity (
-        activity_id SERIAL PRIMARY KEY,
-        itinerary_id INTEGER REFERENCES itinerary(itinerary_id),
-        start_Time TIME NOT NULL,
-        end_time TIME NOT NULL,
-        location VARCHAR(255) NOT NULL,
-        notes TEXT NOT NULL
-    );
+
     CREATE TABLE IF NOT EXISTS Settlement (
                 settlement_id SERIAL PRIMARY KEY,
                 trip_id INTEGER REFERENCES trips(trip_id),

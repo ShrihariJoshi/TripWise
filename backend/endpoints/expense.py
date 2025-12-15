@@ -92,6 +92,7 @@ def expense_handler():
     cur.close()
     conn.close()
     return jsonify(message="Expense recorded successfully", expense_id=expense_id), 201
+
 def update_settlement_for_trip(trip_id, conn=None, cur=None):
     if conn is None or cur is None:
         conn = get_db_connection()
@@ -107,20 +108,27 @@ def update_settlement_for_trip(trip_id, conn=None, cur=None):
         GROUP BY paid_by
     """, (trip_id,))
     paid_map = {row[0]: float(row[1]) for row in cur.fetchall()}
+   
     cur.execute("""
         SELECT user_id, SUM(share_amount)
         FROM expenseShare
         WHERE expense_id IN (SELECT expense_id FROM expenses WHERE trip_id = %s)
+        AND status = 'unpaid'
         GROUP BY user_id
     """, (trip_id,))
     owe_map = {row[0]: float(row[1]) for row in cur.fetchall()}
+    
+
     all_users = set(list(paid_map.keys()) + list(owe_map.keys()))
     net = {u: paid_map.get(u, 0.0) - owe_map.get(u, 0.0) for u in all_users}
+    
+ 
     creditors = [(u, amt) for u, amt in net.items() if amt > 1e-9]
     debtors   = [(u, amt) for u, amt in net.items() if amt < -1e-9]
     creditors.sort(key=lambda x: x[1], reverse=True)
     debtors.sort(key=lambda x: x[1])  
 
+    
     settlements = []
     cred_idx = 0
     debt_idx = 0
@@ -137,7 +145,6 @@ def update_settlement_for_trip(trip_id, conn=None, cur=None):
         c_amt -= settle_amt
         d_amt += settle_amt  
 
-        
         if c_amt <= 0.009: 
             cred_idx += 1
         else:
@@ -147,6 +154,7 @@ def update_settlement_for_trip(trip_id, conn=None, cur=None):
             debt_idx += 1
         else:
             debtors[debt_idx] = (debtor_id, d_amt)
+    
     cur.execute("DELETE FROM settlement WHERE trip_id = %s", (trip_id,))
 
     for from_u, to_u, amt in settlements:
@@ -159,6 +167,90 @@ def update_settlement_for_trip(trip_id, conn=None, cur=None):
         conn.commit()
         cur.close()
         conn.close()
+
+def mark_settlement_done():
+    data = request.get_json() or {}
+    settlement_id = data.get("settlement_id")
+    
+    if not settlement_id:
+        return jsonify(message="settlement_id is required"), 400
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+    
+        cur.execute("""
+            SELECT trip_id, from_user, to_user, amount
+            FROM settlement
+            WHERE settlement_id = %s
+        """, (settlement_id,))
+        
+        row = cur.fetchone()
+        if not row:
+            cur.close()
+            conn.close()
+            return jsonify(message="Settlement not found"), 404
+        
+        trip_id, from_user, to_user, settlement_amount = row
+        settlement_amount = float(settlement_amount)
+        
+
+        cur.execute("""
+            SELECT es.share_id, es.share_amount
+            FROM expenseShare es
+            JOIN expenses e ON es.expense_id = e.expense_id
+            WHERE es.user_id = %s
+            AND e.paid_by = %s
+            AND e.trip_id = %s
+            AND es.status = 'unpaid'
+            ORDER BY e.date ASC, es.share_id ASC
+        """, (from_user, to_user, trip_id))
+        
+        unpaid_shares = cur.fetchall()
+
+        remaining_amount = settlement_amount
+        shares_updated = 0
+        
+        for share_id, share_amount in unpaid_shares:
+            if remaining_amount <= 0.01:
+                break
+            
+            share_amount = float(share_amount)
+            
+            
+            cur.execute("""
+                UPDATE expenseShare
+                SET status = 'paid'
+                WHERE share_id = %s
+            """, (share_id,))
+            
+            shares_updated += 1
+            remaining_amount -= share_amount
+        
+      
+        cur.execute("DELETE FROM settlement WHERE settlement_id = %s", (settlement_id,))
+        
+    
+        update_settlement_for_trip(trip_id, conn=conn, cur=cur)
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return jsonify(
+            message="Settlement marked as done and expense shares updated",
+            settlement_id=settlement_id,
+            expense_shares_updated=shares_updated,
+            amount_settled=settlement_amount
+        ), 200
+        
+    except Exception as e:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify(message=f"Failed to mark settlement as done: {str(e)}"), 500
+
 def get_settlement_json():
     trip_name = request.args.get("trip_name", "")
     trip_name = trip_name.strip()
@@ -206,7 +298,12 @@ def get_settlement_json():
         "trip_name": trip_name,
         "settlements": settlements
     })
+
 def individual_settlements():
+    """
+    Get individual user's balance across all trips.
+    Only considers UNPAID expense shares.
+    """
     username = request.args.get("username", "").strip()
     if not username:
         return jsonify(message="username parameter is required"), 400
@@ -243,11 +340,14 @@ def individual_settlements():
         cur.execute("""
             SELECT COALESCE(SUM(share_amount), 0)
             FROM expenseShare
-            WHERE user_id = %s AND expense_id IN (
+            WHERE user_id = %s 
+            AND expense_id IN (
                 SELECT expense_id FROM expenses WHERE trip_id = %s
             )
+            AND status = 'unpaid'
         """, (user_id, trip_id))
         total_owed = float(cur.fetchone()[0])
+        
         net = total_paid - total_owed
 
         trip_balances.append({
@@ -263,6 +363,7 @@ def individual_settlements():
         "username": username,
         "trip_balances": trip_balances
     })
+
 def get_trip_expense_history():
     trip_name = request.args.get("trip_name", "").strip()
     if not trip_name:

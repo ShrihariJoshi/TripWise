@@ -9,6 +9,9 @@ def itinerary_handler():
     day_number = data.get("day_number")
     title = data.get("title")
     description = data.get("description", "")
+    location = data.get("location")
+    start_time = data.get("start_time")
+    end_time = data.get("end_time")
 
     if not (trip_name and day_number is not None and title):
         return jsonify(message="missing fields"), 400
@@ -30,8 +33,8 @@ def itinerary_handler():
     trip_id = row[0]
 
     cur.execute(
-        "INSERT INTO itinerary (trip_id, day_number, title, description) VALUES (%s, %s, %s, %s) RETURNING itinerary_id",
-        (trip_id, day_number, title, description)
+        "INSERT INTO itinerary (trip_id, day_number, title, description,loctation,start_time,end_time) VALUES (%s, %s, %s, %s,%s,%s,%s) RETURNING itinerary_id",
+        (trip_id, day_number, title, description, location,start_time,end_time)
     )
     row = cur.fetchone()
     if not row:
@@ -45,79 +48,36 @@ def itinerary_handler():
     cur.close()
     conn.close()
     return jsonify(message="Itinerary item recorded successfully", itinerary_id=itinerary_id), 201
-def activity_handler():
-    data = request.get_json() or {}
-    itinerary_id = data.get("itinerary_id")
-    start_time = data.get("start_time")
-    end_time = data.get("end_time")
-    location = data.get("location")
-    description = data.get("description", "")
-
-    if not (itinerary_id and start_time and end_time and location):
-        return jsonify(message="missing fields"), 400
-
-    try:
-        itinerary_id = int(itinerary_id)
-    except (TypeError, ValueError):
-        return jsonify(message="itinerary_id must be an integer"), 400
-
+def itinerary_details():
+    trip_name=request.args.get("trip_name")
     conn = get_db_connection()
     cur = conn.cursor()
-
-    cur.execute("SELECT itinerary_id FROM itinerary WHERE itinerary_id = %s", (itinerary_id,))
-    row = cur.fetchone()
-    if not row:
-        cur.close()
-        conn.close()
-        return jsonify(message="Itinerary item not found"), 404
-
-    cur.execute(
-        "INSERT INTO activity (itinerary_id, start_time, end_time, location, description) VALUES (%s, %s, %s, %s, %s) RETURNING activity_id",
-        (itinerary_id, start_time, end_time, location, description)
-    )
-    row = cur.fetchone()
-    if not row:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        return jsonify(message="failed to create activity"), 500
-    activity_id = row[0]
-
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify(message="Activity recorded successfully", activity_id=activity_id), 201
-def get_itinerary_for_trip():
-    trip_name = request.args.get("trip_name", "").strip()
-    if not trip_name:
-        return jsonify(message="trip_name is required"), 400
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name.strip(),))
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name,))
     row = cur.fetchone()
     if not row:
         cur.close()
         conn.close()
         return jsonify(message="Trip not found"), 404
     trip_id = row[0]
-
     cur.execute("""
-        SELECT itinerary_id, day_number, title, description
+        SELECT day_number, title, description,loctation,start_time,end_time
         FROM itinerary
         WHERE trip_id = %s
         ORDER BY day_number ASC
     """, (trip_id,))
-    itinerary_items = [
-        {
-            "itinerary_id": row[0],
-            "day_number": row[1],
-            "title": row[2],
-            "description": row[3]
-        }
-        for row in cur.fetchall()
-    ]
+    rows = cur.fetchall()
 
+    itinerary_items = []
+    for row in rows:
+        itinerary_items.append({
+            "day_number": row[0],
+            "title": row[1],
+            "description": row[2],
+            "location":row[3],
+            "start_time": row[4].isoformat(),
+            "end_time": row[5].isoformat(),
+        })
     cur.close()
     conn.close()
-    return jsonify(itinerary=itinerary_items), 200
+    return jsonify(itinerary_items=itinerary_items)
+
