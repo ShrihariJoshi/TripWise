@@ -1,13 +1,6 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
-
-# Load environment variables from .env
-load_dotenv()
-import psycopg2
-from dotenv import load_dotenv
-import os
-
 load_dotenv()
 
 def get_db_connection():
@@ -59,23 +52,23 @@ def create_tables():
         amount FLOAT NOT NULL,
         date DATE NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS ExpenseShare (
+    CREATE TABLE IF NOT EXISTS expenseShare (
         share_id SERIAL PRIMARY KEY,
-        expense_id INTEGER REFERENCES Expenses(expense_id),
+        expense_id INTEGER REFERENCES expenses(expense_id),
         user_id INTEGER REFERENCES users(id),
         share_amount FLOAT NOT NULL,
         status VARCHAR(50) NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS Itineary (
-        itineary_id SERIAL PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS itinerary (
+        itinerary_id SERIAL PRIMARY KEY,
         trip_id INTEGER REFERENCES trips(trip_id),
         day_number INTEGER NOT NULL,
         title VARCHAR(255) NOT NULL,
         description TEXT
     );
-    CREATE TABLE IF NOT EXISTS Activity (
+    CREATE TABLE IF NOT EXISTS activity (
         activity_id SERIAL PRIMARY KEY,
-        itineary_id INTEGER REFERENCES Itineary(itineary_id),
+        itinerary_id INTEGER REFERENCES itinerary(itinerary_id),
         start_Time TIME NOT NULL,
         end_time TIME NOT NULL,
         location VARCHAR(255) NOT NULL,

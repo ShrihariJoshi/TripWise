@@ -2,6 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token
 from db import get_db_connection
+from datetime import datetime
 
 def trip_handler():
     data = request.get_json() or {}
@@ -52,3 +53,38 @@ def join_trip_handler():
     cur.close()
     conn.close()
     return jsonify(message="Joined trip successfully"), 201
+def get_trip_user():
+    user_name=request.args.get("username")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE username = %s", (user_name,))
+    user_id = cur.fetchone()[0]
+    cur.execute("select tm.trip_id, t.trip_name ,t.destination , t.start_date , t.end_date,t.trip_budget from trips t inner join TripMember tm on t.trip_id=tm.trip_id where tm.user_id=%s",(user_id,))
+    trips = cur.fetchall()
+    trip_list = []
+    memlist=[]
+    for trip in trips:
+        cur.execute("SELECT SUM(amount) FROM expenses WHERE trip_id = %s", (trip[0],))
+        spent = cur.fetchone()[0]
+        cur.execute("SELECT user_id FROM TripMember WHERE trip_id = %s", (trip[0],))
+        members = cur.fetchall()
+        for member in members:
+            cur.execute("SELECT username FROM users WHERE id = %s", (member[0],))
+            member_name = cur.fetchone()[0]
+            memlist.append(member_name)
+        trip_info = {
+            "trip_id": trip[0],
+            "trip_name": trip[1],
+            "destination": trip[2],
+            "start_date": trip[3].isoformat(),
+            "end_date": trip[4].isoformat(),
+            "trip_budget": float(trip[5]),
+            "amount_spent": float(spent),
+            "members": memlist,
+            "status": "Completed" if trip[4] < datetime.now().date() else "Ongoing"
+        }
+
+        trip_list.append(trip_info)
+    cur.close()
+    conn.close()
+    return jsonify(trips=trip_list), 200
