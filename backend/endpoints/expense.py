@@ -253,6 +253,7 @@ def mark_settlement_done():
 
 def get_settlement_json():
     trip_name = request.args.get("trip_name", "")
+    username = request.args.get("username", "")
     trip_name = trip_name.strip()
     if not trip_name:
         return jsonify(message="trip_name parameter is required"), 400
@@ -290,9 +291,6 @@ def get_settlement_json():
             "to_user": to_user,
             "amount": float(row[3]),
         })
-
-    cur.close()
-    conn.close()
 
     return jsonify({
         "trip_name": trip_name,
