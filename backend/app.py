@@ -29,7 +29,8 @@ app.add_url_rule("/trip-details", view_func=trip_handlers.get_trip_user, methods
 app.add_url_rule("/user-expenses", view_func=expense_handlers.individual_settlements, methods=["GET"])
 app.add_url_rule("/trip-expense-history", view_func=expense_handlers.get_trip_expense_history, methods=["GET"])
 app.add_url_rule("/mark-done",view_func=expense_handlers.mark_settlement_done, methods=["POST"])
-#app.add_url_rule("/update_profile", view_func=prof_handlers.profile_update_profile, methods=["PATCH"])
+app.add_url_rule("/update_profile", view_func=prof_handlers.profile_update_profile, methods=["PATCH"])
+app.add_url_rule("/reset_password", view_func=prof_handlers.reset_password, methods=["PATCH"])
 
 
 @app.get("/me")
