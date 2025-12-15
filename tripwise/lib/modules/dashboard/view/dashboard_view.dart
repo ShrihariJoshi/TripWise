@@ -5,22 +5,15 @@ import 'package:tripwise/data/config/text_styles.dart';
 import 'package:tripwise/data/widgets/app_drawer.dart';
 import 'package:tripwise/modules/home/controller/home_controller.dart';
 import 'package:tripwise/modules/profile/controller/profile_controller.dart';
+import 'package:tripwise/modules/trips/controller/trips_controller.dart';
+import 'package:tripwise/modules/trips/model/trip_model.dart';
+import 'package:tripwise/modules/trips/view/detail/trip_detail_view.dart';
 import 'package:tripwise/modules/trips/view/widgets/create_trip_sheet.dart';
 
 class DashboardView extends StatelessWidget {
   DashboardView({super.key});
 
   final bool isTripActive = true;
-
-  // Sample data - replace with actual data from controller
-  final String tripName = "European Adventure";
-  final String destination = "Paris, France";
-  final String startDate = "Dec 15, 2025";
-  final String endDate = "Dec 22, 2025";
-  final int currentDay = 3;
-  final int totalDays = 7;
-  final double budgetUsed = 1250.50;
-  final double totalBudget = 3000.00;
 
   // Sample trip expense data
   final List<Map<String, dynamic>> tripExpenses = [
@@ -53,6 +46,13 @@ class DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final profileController = Get.put(ProfileController());
     final homeController = Get.find<HomeController>();
+    final tripsController = Get.put(TripsController());
+
+    // Get the first active trip from the controller
+    final Trip? activeTrip = tripsController.trips
+        .where((trip) => trip.status == TripStatus.active)
+        .toList()
+        .firstOrNull;
 
     return Scaffold(
       drawer: const AppDrawer(),
@@ -174,7 +174,9 @@ class DashboardView extends StatelessWidget {
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () {
-                      // TODO: Navigate to trip details
+                      if (activeTrip != null) {
+                        Get.to(() => TripDetailView(trip: activeTrip));
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -191,7 +193,7 @@ class DashboardView extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: (isTripActive)
+                      child: (activeTrip != null)
                           ? Padding(
                               padding: const EdgeInsets.all(20),
                               child: Column(
@@ -210,7 +212,7 @@ class DashboardView extends StatelessWidget {
                                               CrossAxisAlignment.start,
                                           children: [
                                             robotoText(
-                                              tripName,
+                                              activeTrip.tripName,
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold,
                                               color: darkTeal,
@@ -225,7 +227,7 @@ class DashboardView extends StatelessWidget {
                                                 ),
                                                 const SizedBox(width: 4),
                                                 robotoText(
-                                                  destination,
+                                                  activeTrip.destination,
                                                   fontSize: 14,
                                                   color: const Color(
                                                     0xff666666,
@@ -252,7 +254,7 @@ class DashboardView extends StatelessWidget {
                                           ),
                                         ),
                                         child: robotoText(
-                                          "Day $currentDay/$totalDays",
+                                          "Day ${activeTrip.currentDay}/${activeTrip.totalDays}",
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                           color: darkTeal,
@@ -278,7 +280,7 @@ class DashboardView extends StatelessWidget {
                                         ),
                                         const SizedBox(width: 8),
                                         robotoText(
-                                          startDate,
+                                          "${activeTrip.startDate.day}/${activeTrip.startDate.month}/${activeTrip.startDate.year}",
                                           fontSize: 13,
                                           color: const Color(0xff333333),
                                         ),
@@ -290,7 +292,7 @@ class DashboardView extends StatelessWidget {
                                         ),
                                         const SizedBox(width: 8),
                                         robotoText(
-                                          endDate,
+                                          "${activeTrip.endDate.day}/${activeTrip.endDate.month}/${activeTrip.endDate.year}",
                                           fontSize: 13,
                                           color: const Color(0xff333333),
                                         ),
@@ -314,7 +316,7 @@ class DashboardView extends StatelessWidget {
                                             color: const Color(0xff666666),
                                           ),
                                           robotoText(
-                                            "₹${budgetUsed.toStringAsFixed(2)} / ₹${totalBudget.toStringAsFixed(2)}",
+                                            "₹${activeTrip.spent.toStringAsFixed(2)} / ₹${activeTrip.budget.toStringAsFixed(2)}",
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                             color: const Color(0xff333333),
@@ -325,17 +327,16 @@ class DashboardView extends StatelessWidget {
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(10),
                                         child: LinearProgressIndicator(
-                                          value: budgetUsed / totalBudget,
+                                          value: activeTrip.progress,
                                           minHeight: 8,
                                           backgroundColor: const Color(
                                             0xffE0E0E0,
                                           ),
                                           valueColor:
                                               AlwaysStoppedAnimation<Color>(
-                                                budgetUsed / totalBudget > 0.8
+                                                activeTrip.progress > 0.8
                                                     ? Colors.red
-                                                    : budgetUsed / totalBudget >
-                                                          0.6
+                                                    : activeTrip.progress > 0.6
                                                     ? Colors.orange
                                                     : lightTeal,
                                               ),
@@ -343,7 +344,7 @@ class DashboardView extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       robotoText(
-                                        "${((budgetUsed / totalBudget) * 100).toStringAsFixed(1)}% used",
+                                        "${(activeTrip.progress * 100).toStringAsFixed(1)}% used",
                                         fontSize: 11,
                                         color: const Color(0xff999999),
                                       ),

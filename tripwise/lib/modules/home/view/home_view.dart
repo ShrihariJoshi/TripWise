@@ -5,7 +5,6 @@ import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/modules/home/controller/home_controller.dart';
 import 'package:tripwise/modules/dashboard/view/dashboard_view.dart';
 import 'package:tripwise/modules/trips/view/trips_view.dart';
-import 'package:tripwise/modules/expenses/view/expenses_view.dart';
 import 'package:tripwise/modules/profile/view/profile_view.dart';
 
 class HomeView extends StatelessWidget {
@@ -18,7 +17,6 @@ class HomeView extends StatelessWidget {
     final pages = [
       DashboardView(),
       TripsView(),
-      // ExpensesView(),
       ProfileView(),
     ];
 
@@ -68,10 +66,6 @@ class HomeView extends StatelessWidget {
                   icon: Icon(Icons.airplanemode_active),
                   label: "Trips",
                 ),
-                // BottomNavigationBarItem(
-                //   icon: Icon(Icons.payments),
-                //   label: "Expenses"
-                // ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person),
                   label: "Profile",

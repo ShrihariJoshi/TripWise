@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:tripwise/data/config/tripwise.dart';
+import 'package:tripwise/data/services/api_service.dart';
 import 'package:tripwise/data/services/cache_service.dart';
 
 class AuthController extends GetxController {

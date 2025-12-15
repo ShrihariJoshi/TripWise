@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
+import 'package:tripwise/data/services/api_service.dart';
+import 'package:tripwise/data/services/cache_service.dart';
 import 'package:tripwise/modules/auth/controller/auth_controller.dart';
 import 'package:tripwise/modules/auth/view/login_choice_screen.dart';
 import 'package:tripwise/modules/home/view/home_view.dart';
@@ -22,6 +24,9 @@ class _SplashViewState extends State<SplashView>
   void initState() {
     super.initState();
     Get.put(AuthController());
+    Get.put(ApiService());
+    Get.put(CacheService());
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),

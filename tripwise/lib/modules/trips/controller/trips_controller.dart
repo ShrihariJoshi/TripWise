@@ -3,10 +3,13 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
+import 'package:tripwise/data/services/api_service.dart';
 import 'package:uuid/uuid.dart';
 import '../model/trip_model.dart';
 
 class TripsController extends GetxController {
+
+  final api = Get.find<ApiService>();
   /// ----------------------------
   /// STATE
   /// ----------------------------
@@ -191,42 +194,72 @@ class TripsController extends GetxController {
   /// CREATE TRIP
   /// ----------------------------
 
-  void createTrip({
+  Future<void> createTrip({
     required String tripName,
     required String destination,
     required DateTime startDate,
     required DateTime endDate,
     required double budget,
-  }) {
+  }) async {
     if (isCreating.value) return;
 
     isCreating.value = true;
 
-    final newTrip = Trip(
-      id: _uuid.v4(), // ✅ unique trip id
-      tripName: tripName,
-      createdBy: "You", // TODO: Replace with actual user name from auth
-      destination: destination,
-      startDate: startDate,
-      endDate: endDate,
-      budget: budget,
-      spent: 0,
-      members: 1,
-    );
+    try {
+      final body = {
+        'trip_name': tripName,
+        'start_date': startDate.toIso8601String(),
+        'end_date': endDate.toIso8601String(),
+        'destination': destination,
+        'budget': budget,
+      };
 
-    trips.add(newTrip);
+      final response = await api.post('/trip', body: body);
 
-    isCreating.value = false;
+      // Parse response and create Trip object
+      final newTrip = Trip(
+        id: response['id'] ?? _uuid.v4(),
+        tripName: response['trip_name'] ?? tripName,
+        createdBy: response['created_by'] ?? "You",
+        destination: response['destination'] ?? destination,
+        startDate: response['start_date'] != null
+            ? DateTime.parse(response['start_date'])
+            : startDate,
+        endDate: response['end_date'] != null
+            ? DateTime.parse(response['end_date'])
+            : endDate,
+        budget: response['budget']?.toDouble() ?? budget,
+        spent: response['spent']?.toDouble() ?? 0,
+        members: response['members'] ?? 1,
+        memberNames: response['member_names'] != null
+            ? List<String>.from(response['member_names'])
+            : ["You"],
+      );
 
-    Get.snackbar(
-      "Trip Created",
-      "Trip '$tripName' created successfully",
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xff4DB6AC),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-    );
+      trips.add(newTrip);
+
+      Get.snackbar(
+        "Trip Created",
+        "Trip '$tripName' created successfully",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: const Color(0xff4DB6AC),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to create trip: ${e.toString()}",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    } finally {
+      isCreating.value = false;
+    }
   }
 
   /// ----------------------------
