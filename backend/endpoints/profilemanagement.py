@@ -5,12 +5,9 @@ from db import get_db_connection
 
 def profile_update_profile():
     data = request.get_json()
-    username = data.get("user_id")
-    new_email = data.get("email")
-    new_phone = data.get("phone")
-
-    if not username:
-        return jsonify(message="user_id is required"), 400
+    username = data.get("username")
+    new_email = data.get("new_email")
+    new_phone = data.get("new_phone")
 
     conn = get_db_connection()
     cur = conn.cursor()
