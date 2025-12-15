@@ -82,8 +82,8 @@ def get_trip_user():
             "start_date": trip[3].isoformat(),
             "end_date": trip[4].isoformat(),
             "trip_budget": float(trip[5]),
-            "amount_spent": float(spent),
-            "members": memlist,
+            "amount_spent": float(spent) if spent else 0.0,
+            "members": memlist if memlist else [],
             "status": "Completed" if trip[4] < datetime.now().date() else "Ongoing"
         }
 
