@@ -24,6 +24,7 @@ def trip_handler():
         "INSERT INTO trips (trip_name, start_date, end_date, destination, created_by, trip_budget) VALUES (%s, %s, %s, %s, %s, %s)",
         (trip_name, start_date, end_date, destination, created_by, trip_budget)
     )
+    cur.execute("INSERT INTO TripMember (user_id, trip_id, role) VALUES (%s, %s, %s)", (created_by, cur.lastrowid, 'admin'))
     conn.commit()
     cur.close()
     conn.close()

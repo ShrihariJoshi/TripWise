@@ -300,10 +300,6 @@ def get_settlement_json():
     })
 
 def individual_settlements():
-    """
-    Get individual user's balance across all trips.
-    Only considers UNPAID expense shares.
-    """
     username = request.args.get("username", "").strip()
     if not username:
         return jsonify(message="username parameter is required"), 400
