@@ -7,7 +7,7 @@ def expense_handler():
     data = request.get_json() or {}
     trip_name = data.get("trip_name").strip()
     amount = data.get("amount")
-    description = data.get("description")
+    description = data.get("description","")
     paid_by_username = data.get("paid_by")
     date = data.get("date")
     shares = data.get("shares")  
@@ -29,8 +29,6 @@ def expense_handler():
 
     conn = get_db_connection()
     cur = conn.cursor()
-
-    print(trip_name)
     cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name,))
     row = cur.fetchone()
     if not row:
@@ -177,79 +175,48 @@ def mark_settlement_done():
     
     conn = get_db_connection()
     cur = conn.cursor()
-    
-    try:
-    
-        cur.execute("""
+    cur.execute("""
             SELECT trip_id, from_user, to_user, amount
             FROM settlement
             WHERE settlement_id = %s
         """, (settlement_id,))
         
-        row = cur.fetchone()
-        if not row:
-            cur.close()
-            conn.close()
-            return jsonify(message="Settlement not found"), 404
-        
-        trip_id, from_user, to_user, settlement_amount = row
-        settlement_amount = float(settlement_amount)
-        
-
-        cur.execute("""
-            SELECT es.share_id, es.share_amount
-            FROM expenseShare es
-            JOIN expenses e ON es.expense_id = e.expense_id
-            WHERE es.user_id = %s
-            AND e.paid_by = %s
-            AND e.trip_id = %s
-            AND es.status = 'unpaid'
-            ORDER BY e.date ASC, es.share_id ASC
-        """, (from_user, to_user, trip_id))
-        
-        unpaid_shares = cur.fetchall()
-
-        remaining_amount = settlement_amount
-        shares_updated = 0
-        
-        for share_id, share_amount in unpaid_shares:
-            if remaining_amount <= 0.01:
-                break
-            
-            share_amount = float(share_amount)
-            
-            
-            cur.execute("""
-                UPDATE expenseShare
-                SET status = 'paid'
-                WHERE share_id = %s
-            """, (share_id,))
-            
-            shares_updated += 1
-            remaining_amount -= share_amount
-        
-      
-        cur.execute("DELETE FROM settlement WHERE settlement_id = %s", (settlement_id,))
-        
-    
-        update_settlement_for_trip(trip_id, conn=conn, cur=cur)
-        
-        conn.commit()
+    row = cur.fetchone()
+    if not row:
         cur.close()
         conn.close()
+        return jsonify(message="Settlement not found"), 404
         
-        return jsonify(
+    trip_id=row[0]
+    from_user=row[1]
+    to_user=row[2]
+    settlement_amount=row[3]
+    print(trip_id,from_user,to_user,settlement_amount)
+    cur.execute("""
+        UPDATE expenseShare
+        SET status = 'paid'
+        WHERE user_id = %s
+        AND expense_id IN (
+            SELECT expense_id FROM expenses WHERE trip_id = %s
+            )
+        AND status = 'unpaid'
+        """, (from_user, trip_id))
+        
+    cur.execute("DELETE FROM settlement WHERE settlement_id = %s", (settlement_id,))
+        
+    
+    update_settlement_for_trip(trip_id, conn=conn, cur=cur)
+        
+    conn.commit()
+    cur.close()
+    conn.close()
+        
+    return jsonify(
             message="Settlement marked as done and expense shares updated",
             settlement_id=settlement_id,
-            expense_shares_updated=shares_updated,
             amount_settled=settlement_amount
         ), 200
         
-    except Exception as e:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        return jsonify(message=f"Failed to mark settlement as done: {str(e)}"), 500
 
 def get_settlement_json():
     trip_name = request.args.get("trip_name", "")
