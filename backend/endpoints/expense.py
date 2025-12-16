@@ -1,363 +1,280 @@
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask import request, jsonify
-from flask_jwt_extended import create_access_token
 from db import get_db_connection
 
+EPS = 0.01
 def expense_handler():
     data = request.get_json() or {}
-    trip_name = data.get("trip_name").strip()
-    amount = data.get("amount")
-    description = data.get("description","")
+
+    trip_name = data.get("trip_name", "").strip()
+    amount = float(data.get("amount", 0))
+    description = data.get("description", "")
     paid_by_username = data.get("paid_by")
     date = data.get("date")
-    shares = data.get("shares")  
+    shares = data.get("shares", {})
 
-    if not (trip_name and amount is not None and description and paid_by_username and shares):
+    if not (trip_name and amount > 0 and paid_by_username and shares):
         return jsonify(message="missing fields"), 400
 
-    if not isinstance(shares, dict) or not shares:
-        return jsonify(message="shares must be a non-empty map of username->share_amount"), 400
-    try:
-        total_shares = sum(float(v) for v in shares.values())
-        amount = float(amount)
-    except (TypeError, ValueError):
-        return jsonify(message="amount and shares must be numeric"), 400
-
-  
-    if abs(total_shares - amount) > 0.01:
+    if abs(sum(float(v) for v in shares.values()) - amount) > EPS:
         return jsonify(message="sum of shares does not match amount"), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name,))
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name=%s", (trip_name,))
     row = cur.fetchone()
     if not row:
-        cur.close()
-        conn.close()
         return jsonify(message="Trip not found"), 404
     trip_id = row[0]
-
-    cur.execute("SELECT id FROM users WHERE username = %s", (paid_by_username,))
+    cur.execute("SELECT id FROM users WHERE username=%s", (paid_by_username,))
     row = cur.fetchone()
     if not row:
-        cur.close()
-        conn.close()
         return jsonify(message="paid_by user not found"), 404
-    paid_by = row[0]
-
-    cur.execute(
-        "INSERT INTO expenses (trip_id, amount, description, paid_by, date) VALUES (%s, %s, %s, %s, %s) RETURNING expense_id",
-        (trip_id, amount, description, paid_by, date)
-    )
-    row = cur.fetchone()
-    if not row:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        return jsonify(message="failed to create expense"), 500
-    expense_id = row[0]
+    paid_by_id = row[0]
+    cur.execute("""
+        INSERT INTO expenses (trip_id, amount, description, paid_by, date)
+        VALUES (%s,%s,%s,%s,%s)
+        RETURNING expense_id
+    """, (trip_id, amount, description, paid_by_id, date))
+    expense_id = cur.fetchone()[0]
     for username, share_amount in shares.items():
-        cur.execute("SELECT id FROM users WHERE username = %s", (username,))
-        user_row = cur.fetchone()
-        if not user_row:
+        cur.execute("SELECT id FROM users WHERE username=%s", (username,))
+        row = cur.fetchone()
+        if not row:
             conn.rollback()
-            cur.close()
-            conn.close()
-            return jsonify(message=f"user '{username}' not found"), 404
-        user_id = user_row[0]
-        try:
-            share_amount = float(share_amount)
-        except (TypeError, ValueError):
-            conn.rollback()
-            cur.close()
-            conn.close()
-            return jsonify(message="share amounts must be numeric"), 400
+            return jsonify(message=f"user {username} not found"), 404
 
-        cur.execute(
-            "INSERT INTO ExpenseShare (expense_id, user_id, share_amount, status) VALUES (%s, %s, %s, %s)",
-            (expense_id, user_id, share_amount, "unpaid")
-        )
+        share_amount = float(share_amount)
+        if share_amount <= 0:
+            continue
+        if row[0] == paid_by_id:
+            continue
 
-    try:
-        update_settlement_for_trip(trip_id, conn=conn, cur=cur)
-    except Exception:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        return jsonify(message="failed to update settlements"), 500
+        cur.execute("""
+            INSERT INTO expenseShare
+            (expense_id, from_user, to_user, share_amount, amt_left)
+            VALUES (%s,%s,%s,%s,%s)
+        """, (expense_id, row[0], paid_by_id, share_amount, share_amount))
+
+    update_settlement_for_trip(trip_id, cur)
 
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify(message="Expense recorded successfully", expense_id=expense_id), 201
-
-def update_settlement_for_trip(trip_id, conn=None, cur=None):
-    if conn is None or cur is None:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        close_conn = True
-    else:
-        close_conn = False
-    
+    return jsonify(message="Expense recorded successfully"), 201
+def update_settlement_for_trip(trip_id, cur):
+    print("Updating settlements for trip:", trip_id)
+    cur.execute("DELETE FROM settlement WHERE trip_id=%s", (trip_id,))
     cur.execute("""
         SELECT paid_by, SUM(amount)
         FROM expenses
-        WHERE trip_id = %s
+        WHERE trip_id=%s
         GROUP BY paid_by
     """, (trip_id,))
-    paid_map = {row[0]: float(row[1]) for row in cur.fetchall()}
-   
+    paid = {u: float(a) for u, a in cur.fetchall()}
     cur.execute("""
-        SELECT user_id, SUM(share_amount)
+        SELECT from_user, SUM(amt_left)
         FROM expenseShare
-        WHERE expense_id IN (SELECT expense_id FROM expenses WHERE trip_id = %s)
-        AND status = 'unpaid'
-        GROUP BY user_id
+        WHERE expense_id IN (
+            SELECT expense_id FROM expenses WHERE trip_id=%s
+        )
+        GROUP BY from_user
     """, (trip_id,))
-    owe_map = {row[0]: float(row[1]) for row in cur.fetchall()}
-    
+    owed = {u: float(a) for u, a in cur.fetchall()}
 
-    all_users = set(list(paid_map.keys()) + list(owe_map.keys()))
-    net = {u: paid_map.get(u, 0.0) - owe_map.get(u, 0.0) for u in all_users}
-    
- 
-    creditors = [(u, amt) for u, amt in net.items() if amt > 1e-9]
-    debtors   = [(u, amt) for u, amt in net.items() if amt < -1e-9]
+    users = set(paid) | set(owed)
+    net = {u: paid.get(u, 0) - owed.get(u, 0) for u in users}
+
+    creditors = [(u, a) for u, a in net.items() if a > EPS]
+    debtors = [(u, a) for u, a in net.items() if a < -EPS]
+
     creditors.sort(key=lambda x: x[1], reverse=True)
-    debtors.sort(key=lambda x: x[1])  
+    debtors.sort(key=lambda x: x[1])
 
-    
-    settlements = []
-    cred_idx = 0
-    debt_idx = 0
-    while cred_idx < len(creditors) and debt_idx < len(debtors):
-        creditor_id, c_amt = creditors[cred_idx]
-        debtor_id, d_amt = debtors[debt_idx]  
+    i = j = 0
+    while i < len(creditors) and j < len(debtors):
+        cu, ca = creditors[i]
+        du, da = debtors[j]
 
-        settle_amt = min(c_amt, -d_amt)
-        if settle_amt <= 0:
-            break
-
-        settlements.append((debtor_id, creditor_id, round(settle_amt, 2)))
-
-        c_amt -= settle_amt
-        d_amt += settle_amt  
-
-        if c_amt <= 0.009: 
-            cred_idx += 1
-        else:
-            creditors[cred_idx] = (creditor_id, c_amt)
-
-        if d_amt >= -0.009:  
-            debt_idx += 1
-        else:
-            debtors[debt_idx] = (debtor_id, d_amt)
-    
-    cur.execute("DELETE FROM settlement WHERE trip_id = %s", (trip_id,))
-
-    for from_u, to_u, amt in settlements:
+        settle = min(ca, -da)
+        print(trip_id, du, cu, round(settle, 2))
         cur.execute("""
             INSERT INTO settlement (trip_id, from_user, to_user, amount, date)
-            VALUES (%s, %s, %s, %s, NOW())
-        """, (trip_id, from_u, to_u, amt))
+            VALUES (%s,%s,%s,%s,NOW())
+        """, (trip_id, du, cu, round(settle, 2)))
 
-    if close_conn:
-        conn.commit()
-        cur.close()
-        conn.close()
+        creditors[i] = (cu, ca - settle)
+        debtors[j] = (du, da + settle)
 
+        if creditors[i][1] <= EPS:
+            i += 1
+        if debtors[j][1] >= -EPS:
+            j += 1
 def mark_settlement_done():
     data = request.get_json() or {}
     settlement_id = data.get("settlement_id")
-    
-    if not settlement_id:
-        return jsonify(message="settlement_id is required"), 400
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-            SELECT trip_id, from_user, to_user, amount
-            FROM settlement
-            WHERE settlement_id = %s
-        """, (settlement_id,))
-        
-    row = cur.fetchone()
-    if not row:
-        cur.close()
-        conn.close()
-        return jsonify(message="Settlement not found"), 404
-        
-    trip_id=row[0]
-    from_user=row[1]
-    to_user=row[2]
-    settlement_amount=row[3]
-    print(trip_id,from_user,to_user,settlement_amount)
-    cur.execute("""
-        UPDATE expenseShare
-        SET status = 'paid'
-        WHERE user_id = %s
-        AND expense_id IN (
-            SELECT expense_id FROM expenses WHERE trip_id = %s
-            )
-        AND status = 'unpaid'
-        """, (from_user, trip_id))
-        
-    cur.execute("DELETE FROM settlement WHERE settlement_id = %s", (settlement_id,))
-        
+        SELECT trip_id, from_user, to_user, amount
+        FROM settlement WHERE settlement_id=%s
+    """, (settlement_id,))
+    trip_id, debtor, creditor, amount = cur.fetchone()
     
-    update_settlement_for_trip(trip_id, conn=conn, cur=cur)
+   
+    cur.execute("""
+        SELECT expense_id, amt_left
+        FROM expenseShare
+        WHERE from_user=%s AND to_user=%s AND amt_left > 0
+        ORDER BY expense_id
+    """, (debtor, creditor))
+    
+    shares = cur.fetchall()
+    remaining = float(amount)
+    
+    for expense_id, amt_left in shares:
+        if remaining <= EPS:
+            break
         
+        payment = min(remaining, amt_left)
+        cur.execute("""
+            UPDATE expenseShare
+            SET amt_left = amt_left - %s
+            WHERE expense_id=%s AND from_user=%s AND to_user=%s
+        """, (payment, expense_id, debtor, creditor))
+        remaining -= payment
+
+    cur.execute("""
+        SELECT SUM(amt_left)
+        FROM expenseShare
+        WHERE from_user=%s AND to_user=%s
+    """, (debtor, creditor))
+    
+    remaining_debt = cur.fetchone()[0]
+    if remaining_debt is None or remaining_debt <= EPS:
+        
+        cur.execute("""
+            SELECT  to_user FROM expenseShare WHERE from_user=%s AND amt_left > 0
+        """, (debtor,))
+        
+        other_creditors = [row[0] for row in cur.fetchall()]
+        for other_creditor in other_creditors:
+            cur.execute("""
+                UPDATE expenseShare
+                SET amt_left = 0
+                WHERE from_user=%s AND to_user=%s
+            """, (debtor, other_creditor))
+
+    cur.execute("DELETE FROM settlement WHERE settlement_id=%s", (settlement_id,))
     conn.commit()
     cur.close()
     conn.close()
-        
-    return jsonify(
-            message="Settlement marked as done and expense shares updated",
-            settlement_id=settlement_id,
-            amount_settled=settlement_amount
-        ), 200
-        
+    return jsonify(message="Settlement completed"), 200
+
 
 def get_settlement_json():
-    trip_name = request.args.get("trip_name", "")
-    username = request.args.get("username", "")
-    trip_name = trip_name.strip()
+    trip_name = request.args.get("trip_name", "").strip()
     if not trip_name:
-        return jsonify(message="trip_name parameter is required"), 400
+        return jsonify(message="trip_name required"), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name,))
+
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name=%s", (trip_name,))
     row = cur.fetchone()
     if not row:
-        cur.close()
-        conn.close()
         return jsonify(message="Trip not found"), 404
     trip_id = row[0]
 
     cur.execute("""
-        SELECT settlement_id, from_user, to_user, amount
-        FROM settlement
-        WHERE trip_id = %s
-        ORDER BY settlement_id ASC
+        SELECT s.settlement_id, u1.username, u2.username, s.amount
+        FROM settlement s
+        JOIN users u1 ON s.from_user=u1.id
+        JOIN users u2 ON s.to_user=u2.id
+        WHERE s.trip_id=%s
     """, (trip_id,))
-    rows = cur.fetchall()
 
-    settlements = []
-    for row in rows:
-        cur.execute("SELECT username FROM users WHERE id = %s", (int(row[1]),))
-        from_user_row = cur.fetchone()
-        from_user = from_user_row[0] 
-        cur.execute("SELECT username FROM users WHERE id = %s", (int(row[2]),))
-        to_user_row = cur.fetchone()
-        to_user = to_user_row[0]
-        
-        settlements.append({
-            "settlement_id": row[0],
-            "from_user": from_user,
-            "to_user": to_user,
-            "amount": float(row[3]),
-        })
+    settlements = [{
+        "settlement_id": sid,
+        "from_user": f,
+        "to_user": t,
+        "amount": float(a)
+    } for sid, f, t, a in cur.fetchall()]
 
-    return jsonify({
-        "trip_name": trip_name,
-        "settlements": settlements
-    })
+    cur.close()
+    conn.close()
+
+    return jsonify(trip_name=trip_name, settlements=settlements)
+
+
 
 def individual_settlements():
     username = request.args.get("username", "").strip()
     if not username:
-        return jsonify(message="username parameter is required"), 400
+        return jsonify(message="username required"), 400
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+
+    cur.execute("SELECT id FROM users WHERE username=%s", (username,))
     row = cur.fetchone()
     if not row:
-        cur.close()
-        conn.close()
         return jsonify(message="User not found"), 404
-
     user_id = row[0]
+
     cur.execute("""
-        SELECT DISTINCT t.trip_id, t.trip_name
+        SELECT t.trip_name,
+        COALESCE(SUM(CASE WHEN es.to_user=%s THEN es.amt_left ELSE 0 END),0) -
+        COALESCE(SUM(CASE WHEN es.from_user=%s THEN es.amt_left ELSE 0 END),0)
         FROM trips t
-        JOIN expenses e ON t.trip_id = e.trip_id
-        WHERE e.paid_by = %s
-           OR e.expense_id IN (
-                SELECT expense_id FROM expenseShare WHERE user_id = %s
-           )
+        JOIN expenses e ON t.trip_id=e.trip_id
+        LEFT JOIN expenseShare es ON e.expense_id=es.expense_id
+        WHERE es.amt_left > 0 OR es.amt_left IS NULL
+        GROUP BY t.trip_name
     """, (user_id, user_id))
 
-    trips = cur.fetchall()
-    trip_balances = []
-
-    for trip_id, trip_name in trips:
-        cur.execute("""
-            SELECT COALESCE(SUM(amount), 0)
-            FROM expenses
-            WHERE trip_id = %s AND paid_by = %s
-        """, (trip_id, user_id))
-        total_paid = float(cur.fetchone()[0])
-        cur.execute("""
-            SELECT COALESCE(SUM(share_amount), 0)
-            FROM expenseShare
-            WHERE user_id = %s 
-            AND expense_id IN (
-                SELECT expense_id FROM expenses WHERE trip_id = %s
-            )
-            AND status = 'unpaid'
-        """, (user_id, trip_id))
-        total_owed = float(cur.fetchone()[0])
-        
-        net = total_paid - total_owed
-
-        trip_balances.append({
-            "trip_name": trip_name,
-            "net_balance": round(net, 2),
-            "status": "owed" if net > 0.01 else ("owes" if net < -0.01 else "settled")
-        })
+    result = [{
+        "trip_name": trip,
+        "net_balance": round(net, 2),
+        "status": "owed" if net > EPS else "owes" if net < -EPS else "settled"
+    } for trip, net in cur.fetchall()]
 
     cur.close()
     conn.close()
+    return jsonify(username=username, trip_balances=result)
 
-    return jsonify({
-        "username": username,
-        "trip_balances": trip_balances
-    })
+
 
 def get_trip_expense_history():
     trip_name = request.args.get("trip_name", "").strip()
     if not trip_name:
-        return jsonify(message="trip_name parameter is required"), 400
+        return jsonify(message="trip_name required"), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT trip_id FROM trips WHERE trip_name = %s", (trip_name,))
+
+    cur.execute("SELECT trip_id FROM trips WHERE trip_name=%s", (trip_name,))
     row = cur.fetchone()
     if not row:
-        cur.close()
-        conn.close()
         return jsonify(message="Trip not found"), 404
     trip_id = row[0]
 
-    cur.execute(('''select  Expenses.expense_id, amount, description, username, date 
-                 FROM Expenses ,users WHERE id=paid_by and trip_id = %s ORDER BY date ASC'''), (trip_id,))
-    rows = cur.fetchall()
+    cur.execute("""
+        SELECT e.expense_id, e.amount, e.description, u.username, e.date
+        FROM expenses e
+        JOIN users u ON e.paid_by=u.id
+        WHERE e.trip_id=%s
+        ORDER BY e.date
+    """, (trip_id,))
 
-    expenses = []
-    for row in rows:
-        expenses.append({
-            "expense_id": row[0],
-            "amount": float(row[1]),
-            "description": row[2],
-            "paid_by": row[3],
-            "date": str(row[4]),
-        })
+    expenses = [{
+        "expense_id": i,
+        "amount": float(a),
+        "description": d,
+        "paid_by": u,
+        "date": str(dt)
+    } for i, a, d, u, dt in cur.fetchall()]
 
     cur.close()
     conn.close()
 
-    return jsonify({
-        "trip_name": trip_name,
-        "expenses": expenses
-    })
+    return jsonify(trip_name=trip_name, expenses=expenses)

@@ -55,9 +55,10 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS expenseShare (
         share_id SERIAL PRIMARY KEY,
         expense_id INTEGER REFERENCES expenses(expense_id),
-        user_id INTEGER REFERENCES users(id),
+        from_user INTEGER REFERENCES users(id),
+        to_user INTEGER REFERENCES users(id),
         share_amount FLOAT NOT NULL,
-        status VARCHAR(50) NOT NULL
+        amt_left FLOAT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS itinerary (
         itinerary_id SERIAL PRIMARY KEY,
@@ -71,12 +72,12 @@ def create_tables():
     );
 
     CREATE TABLE IF NOT EXISTS Settlement (
-                settlement_id SERIAL PRIMARY KEY,
-                trip_id INTEGER REFERENCES trips(trip_id),
-                from_user INTEGER REFERENCES users(id),
-                to_user INTEGER REFERENCES users(id),
-                amount FLOAT NOT NULL,
-                date DATE NOT NULL
+        settlement_id SERIAL PRIMARY KEY,
+        trip_id INTEGER REFERENCES trips(trip_id),
+        from_user INTEGER REFERENCES users(id),
+        to_user INTEGER REFERENCES users(id),
+        amount FLOAT NOT NULL,
+        date DATE NOT NULL
     );
     """)
     
