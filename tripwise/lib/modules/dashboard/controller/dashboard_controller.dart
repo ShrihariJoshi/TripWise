@@ -28,8 +28,10 @@ class DashboardController extends GetxController {
         queryParameters: {'username': username},
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        final expenseResponse = UserExpenseResponse.fromJson(response.data);
+      print(response);
+
+      if (response['trip_balances'] != null) {
+        final expenseResponse = UserExpenseResponse.fromJson(response);
         userExpenses.value = expenseResponse.tripBalances;
       } else {
         errorMessage.value = 'Failed to load expenses';

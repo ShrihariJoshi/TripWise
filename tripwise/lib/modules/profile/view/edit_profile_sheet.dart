@@ -224,26 +224,42 @@ class EditProfileSheet extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: () {
-                      if (nameController.text.isNotEmpty) {
-                        controller.updateField('name', nameController.text);
+                    onPressed: () async {
+                      // Validate inputs
+                      if (emailController.text.isEmpty ||
+                          phoneController.text.isEmpty) {
+                        Get.snackbar(
+                          'Error',
+                          'Email and phone are required',
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white,
+                          snackPosition: SnackPosition.TOP,
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 12,
+                        );
+                        return;
                       }
-                      if (emailController.text.isNotEmpty) {
-                        controller.updateField('email', emailController.text);
-                      }
-                      if (phoneController.text.isNotEmpty) {
-                        controller.updateField('phone', phoneController.text);
-                      }
+
+                      // Close the sheet
                       Get.back();
-                      Get.snackbar(
-                        'Success',
-                        'Profile updated successfully',
-                        backgroundColor: lightTeal,
-                        colorText: Colors.white,
-                        snackPosition: SnackPosition.BOTTOM,
-                        margin: const EdgeInsets.all(16),
-                        borderRadius: 12,
+
+                      // Call API to update profile
+                      final success = await controller.updateProfile(
+                        email: emailController.text.trim(),
+                        phone: phoneController.text.trim(),
                       );
+
+                      if (success) {
+                        Get.snackbar(
+                          'Success',
+                          'Profile updated successfully',
+                          backgroundColor: lightTeal,
+                          colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM,
+                          margin: const EdgeInsets.all(16),
+                          borderRadius: 12,
+                        );
+                      }
                     },
                     child: robotoText(
                       "Save Changes",

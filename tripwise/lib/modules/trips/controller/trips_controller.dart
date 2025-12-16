@@ -320,6 +320,40 @@ class TripsController extends GetxController {
   }
 
   /// ----------------------------
+  /// JOIN TRIP
+  /// ----------------------------
+
+  Future<bool> joinTrip(String tripName) async {
+    try {
+      final userName = Get.find<ProfileController>().fullName.value;
+
+      final body = {
+        'username': userName,
+        'tripname': tripName,
+        'role': 'member',
+      };
+
+      final response = await api.post('/join_trip', body: body);
+
+      if (response['message'] != null) {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to join trip: ${e.toString()}",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade900,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+      return false;
+    }
+  }
+
+  /// ----------------------------
   /// JOIN TRIP DIALOG
   /// ----------------------------
 
@@ -452,10 +486,10 @@ class TripsController extends GetxController {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
-                        final tripId = joinTripController.text.trim();
+                      onPressed: () async {
+                        final tripName = joinTripController.text.trim();
 
-                        if (tripId.isEmpty) {
+                        if (tripName.isEmpty) {
                           Get.snackbar(
                             "Error",
                             "Trip name cannot be empty",
@@ -468,19 +502,25 @@ class TripsController extends GetxController {
                           return;
                         }
 
-                        /// 🔁 BACKEND LATER
-                        /// For now — just simulate successful join
+                        // Close dialog before API call
                         Get.back();
 
-                        Get.snackbar(
-                          "Success",
-                          "Successfully joined trip!",
-                          backgroundColor: lightTeal,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.TOP,
-                          margin: const EdgeInsets.all(16),
-                          borderRadius: 12,
-                        );
+                        // Call join trip API
+                        final success = await joinTrip(tripName);
+
+                        if (success) {
+                          Get.snackbar(
+                            "Success",
+                            "Successfully joined trip!",
+                            backgroundColor: lightTeal,
+                            colorText: Colors.white,
+                            snackPosition: SnackPosition.TOP,
+                            margin: const EdgeInsets.all(16),
+                            borderRadius: 12,
+                          );
+                          // Refresh trips list
+                          await fetchTrips();
+                        }
                       },
                       child: robotoText(
                         "Join Trip",

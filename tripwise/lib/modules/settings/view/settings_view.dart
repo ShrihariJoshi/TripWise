@@ -11,7 +11,6 @@ class SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final homeController = Get.find<HomeController>();
     return Scaffold(
       backgroundColor: bgColor,
       body: Column(
@@ -74,7 +73,7 @@ class SettingsView extends StatelessWidget {
                     subtitle: "Update your personal information",
                     onTap: () {
                       Get.back();
-                      
+
                       Future.delayed(const Duration(milliseconds: 300));
                       Get.bottomSheet(
                         const EditProfileSheet(),
@@ -92,15 +91,14 @@ class SettingsView extends StatelessWidget {
                     },
                   ),
 
-                  _SettingsTile(
-                    icon: Icons.notifications_outlined,
-                    title: "Notifications",
-                    subtitle: "Configure notification preferences",
-                    onTap: () {
-                      // TODO: Navigate to notifications settings
-                    },
-                  ),
-
+                  // _SettingsTile(
+                  //   icon: Icons.notifications_outlined,
+                  //   title: "Notifications",
+                  //   subtitle: "Configure notification preferences",
+                  //   onTap: () {
+                  //     // TODO: Navigate to notifications settings
+                  //   },
+                  // ),
                   const SizedBox(height: 24),
 
                   // App Preferences Section
@@ -133,49 +131,48 @@ class SettingsView extends StatelessWidget {
                     },
                   ),
 
-                  _SettingsSwitchTile(
-                    icon: Icons.dark_mode_outlined,
-                    title: "Dark Mode",
-                    subtitle: "Enable dark theme",
-                    value: false,
-                    onChanged: (value) {
-                      // TODO: Toggle dark mode
-                    },
-                  ),
-
+                  // _SettingsSwitchTile(
+                  //   icon: Icons.dark_mode_outlined,
+                  //   title: "Dark Mode",
+                  //   subtitle: "Enable dark theme",
+                  //   value: false,
+                  //   onChanged: (value) {
+                  //     // TODO: Toggle dark mode
+                  //   },
+                  // ),
                   const SizedBox(height: 24),
 
                   // Data & Storage Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: robotoText(
-                      "Data & Storage",
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xff888888),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 20),
+                  //   child: robotoText(
+                  //     "Data & Storage",
+                  //     fontSize: 14,
+                  //     fontWeight: FontWeight.bold,
+                  //     color: const Color(0xff888888),
+                  //   ),
+                  // ),
+                  // const SizedBox(height: 12),
 
-                  _SettingsTile(
-                    icon: Icons.cloud_outlined,
-                    title: "Backup & Sync",
-                    subtitle: "Manage your data backup",
-                    onTap: () {
-                      // TODO: Navigate to backup settings
-                    },
-                  ),
+                  // _SettingsTile(
+                  //   icon: Icons.cloud_outlined,
+                  //   title: "Backup & Sync",
+                  //   subtitle: "Manage your data backup",
+                  //   onTap: () {
+                  //     // TODO: Navigate to backup settings
+                  //   },
+                  // ),
 
-                  _SettingsTile(
-                    icon: Icons.storage_outlined,
-                    title: "Storage",
-                    subtitle: "Manage app storage",
-                    onTap: () {
-                      // TODO: Navigate to storage settings
-                    },
-                  ),
+                  // _SettingsTile(
+                  //   icon: Icons.storage_outlined,
+                  //   title: "Storage",
+                  //   subtitle: "Manage app storage",
+                  //   onTap: () {
+                  //     // TODO: Navigate to storage settings
+                  //   },
+                  // ),
 
-                  const SizedBox(height: 24),
+                  // const SizedBox(height: 24),
 
                   // Support Section
                   Padding(
@@ -321,6 +318,7 @@ class SettingsView extends StatelessWidget {
   void _showDeleteAccountDialog(BuildContext context) {
     Get.dialog(
       Dialog(
+        backgroundColor: bgColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(24),

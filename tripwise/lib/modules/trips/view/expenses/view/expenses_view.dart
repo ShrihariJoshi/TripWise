@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
+import 'package:tripwise/modules/profile/controller/profile_controller.dart';
 import 'package:tripwise/modules/trips/model/trip_model.dart';
 import 'package:tripwise/modules/trips/view/expenses/widgets/add_expense_sheet.dart';
 import 'package:tripwise/modules/trips/controller/expenses_controller.dart';
@@ -17,8 +18,8 @@ class ExpensesView extends StatefulWidget {
 }
 
 class _ExpensesViewState extends State<ExpensesView> {
-  final Set<String> _settledDebts = {}; // Track settled debts by unique key
   late final ExpensesController _expensesController;
+  final profileController = Get.find<ProfileController>();
 
   @override
   void initState() {
@@ -32,12 +33,8 @@ class _ExpensesViewState extends State<ExpensesView> {
     await _expensesController.fetchSettlements(widget.trip.tripName);
   }
 
-  String _getSettlementKey(Settlement settlement) {
-    return '${settlement.id}_${settlement.from}_${settlement.to}_${settlement.amount.toStringAsFixed(2)}';
-  }
-
-  void _markAsSettled(Settlement settlement) {
-    showDialog(
+  void _markAsSettled(Settlement settlement) async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bgColor,
@@ -101,7 +98,7 @@ class _ExpensesViewState extends State<ExpensesView> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: robotoText(
               'Cancel',
               fontSize: 14,
@@ -118,22 +115,7 @@ class _ExpensesViewState extends State<ExpensesView> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
-              setState(() {
-                _settledDebts.add(_getSettlementKey(settlement));
-              });
-              Navigator.pop(context);
-              Get.snackbar(
-                'Settlement Recorded',
-                '${settlement.from} → ${settlement.to}: ₹${settlement.amount.toStringAsFixed(2)} marked as paid',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xff4DB6AC),
-                colorText: Colors.white,
-                margin: const EdgeInsets.all(16),
-                borderRadius: 12,
-                duration: const Duration(seconds: 3),
-              );
-            },
+            onPressed: () => Navigator.pop(context, true),
             child: robotoText(
               'Mark as Paid',
               fontSize: 14,
@@ -144,6 +126,26 @@ class _ExpensesViewState extends State<ExpensesView> {
         ],
       ),
     );
+
+    if (confirmed == true) {
+      final success = await _expensesController.markSettlementAsDone(
+        settlement.id,
+        widget.trip.tripName,
+      );
+
+      if (success) {
+        Get.snackbar(
+          'Settlement Recorded',
+          '${settlement.from} → ${settlement.to}: ₹${settlement.amount.toStringAsFixed(2)} marked as paid',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: const Color(0xff4DB6AC),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    }
   }
 
   void _addExpense(Expense expense) async {
@@ -161,39 +163,26 @@ class _ExpensesViewState extends State<ExpensesView> {
     );
   }
 
-  // Calculate balance for current user
-  Map<String, double> _calculateBalances() {
-    Map<String, double> balances = {};
-    final expenses = _expensesController.expenses;
+  // Calculate balance for current user based on settlements
+  double _calculateCurrentUserBalance() {
+    final settlements = _expensesController.settlements;
+    final currentUser = profileController.fullName.value;
+    double balance = 0.0;
 
-    // Initialize all members with 0 balance
-    for (var member in widget.trip.memberNames) {
-      balances[member] = 0.0;
-    }
-
-    // Calculate balances
-    for (var expense in expenses) {
-      double perPersonShare = expense.perPersonShare;
-
-      // Payer gets credited
-      balances[expense.paidBy] =
-          (balances[expense.paidBy] ?? 0) + expense.amount;
-
-      // Each person in split gets debited
-      if (expense.splitBetween.isNotEmpty) {
-        for (var member in expense.splitBetween) {
-          balances[member] = (balances[member] ?? 0) - perPersonShare;
-        }
-      } else {
-        // If splitBetween is empty, split equally among all members
-        final sharePerMember = expense.amount / widget.trip.memberNames.length;
-        for (var member in widget.trip.memberNames) {
-          balances[member] = (balances[member] ?? 0) - sharePerMember;
-        }
+    // Calculate net balance from settlements
+    // Positive: user is owed money (they should receive)
+    // Negative: user owes money (they should pay)
+    for (var settlement in settlements) {
+      if (settlement.to == currentUser) {
+        // Current user should receive this amount
+        balance += settlement.amount;
+      } else if (settlement.from == currentUser) {
+        // Current user should pay this amount
+        balance -= settlement.amount;
       }
     }
 
-    return balances;
+    return balance;
   }
 
   @override
@@ -204,10 +193,8 @@ class _ExpensesViewState extends State<ExpensesView> {
       }
 
       final expenses = _expensesController.expenses;
-      final balances = _calculateBalances();
+      final currentUserBalance = _calculateCurrentUserBalance();
       final settlements = _expensesController.settlements;
-      final currentUserBalance =
-          balances['John Doe'] ?? 0.0; // Replace with actual current user
 
       // Sort expenses by date (most recent first)
       final sortedExpenses = List<Expense>.from(expenses)
@@ -322,63 +309,31 @@ class _ExpensesViewState extends State<ExpensesView> {
                           )
                         else
                           ...settlements.map((settlement) {
-                            final settlementKey = _getSettlementKey(settlement);
-                            final isSettled = _settledDebts.contains(
-                              settlementKey,
-                            );
-
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: isSettled
-                                    ? Colors.grey.shade50
-                                    : Colors.white,
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSettled
-                                      ? Colors.grey.shade300
-                                      : borderColor,
+                                  color: borderColor,
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    isSettled
-                                        ? Icons.check_circle
-                                        : Icons.arrow_forward,
+                                    Icons.arrow_forward,
                                     size: 18,
-                                    color: isSettled
-                                        ? Colors.green
-                                        : const Color(0xff718096),
+                                    color: const Color(0xff718096),
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        robotoText(
-                                          '${settlement.from} → ${settlement.to}',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: isSettled
-                                              ? Colors.grey.shade600
-                                              : const Color(0xff2D3748),
-                                        ),
-                                        if (isSettled)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 2,
-                                            ),
-                                            child: robotoText(
-                                              'Settled',
-                                              fontSize: 12,
-                                              color: Colors.green,
-                                            ),
-                                          ),
-                                      ],
+                                    child: robotoText(
+                                      '${settlement.from} → ${settlement.to}',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xff2D3748),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -386,40 +341,36 @@ class _ExpensesViewState extends State<ExpensesView> {
                                     '₹${settlement.amount.toStringAsFixed(2)}',
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: isSettled
-                                        ? Colors.grey.shade600
-                                        : darkTeal,
+                                    color: darkTeal,
                                   ),
-                                  if (!isSettled) ...[
-                                    const SizedBox(width: 8),
-                                    SizedBox(
-                                      height: 32,
-                                      child: OutlinedButton(
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                          ),
-                                          side: const BorderSide(
-                                            color: darkTeal,
-                                            width: 1.5,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
+                                  const SizedBox(width: 8),
+                                  SizedBox(
+                                    height: 32,
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
                                         ),
-                                        onPressed: () =>
-                                            _markAsSettled(settlement),
-                                        child: robotoText(
-                                          'Settle',
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
+                                        side: const BorderSide(
                                           color: darkTeal,
+                                          width: 1.5,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                       ),
+                                      onPressed: () =>
+                                          _markAsSettled(settlement),
+                                      child: robotoText(
+                                        'Settle',
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: darkTeal,
+                                      ),
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
                             );

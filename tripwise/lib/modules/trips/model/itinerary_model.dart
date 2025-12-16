@@ -27,6 +27,48 @@ class ItineraryEvent {
 
   Duration get duration => endTime.difference(startTime);
 
+  factory ItineraryEvent.fromJson(
+    Map<String, dynamic> json,
+    DateTime tripStartDate,
+  ) {
+    // Parse day_number to calculate the actual date
+    final dayNumber = json['day_number'] as int;
+    final eventDate = tripStartDate.add(Duration(days: dayNumber - 1));
+
+    // Parse time strings (format: "HH:MM:SS")
+    final startTimeParts = (json['start_time'] as String).split(':');
+    final endTimeParts = (json['end_time'] as String).split(':');
+
+    final startTime = DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+      int.parse(startTimeParts[0]),
+      int.parse(startTimeParts[1]),
+      startTimeParts.length > 2 ? int.parse(startTimeParts[2]) : 0,
+    );
+
+    final endTime = DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+      int.parse(endTimeParts[0]),
+      int.parse(endTimeParts[1]),
+      endTimeParts.length > 2 ? int.parse(endTimeParts[2]) : 0,
+    );
+
+    return ItineraryEvent(
+      id: '${json['day_number']}_${json['start_time']}_${json['title']}',
+      title: json['title'] ?? '',
+      location: json['location'] ?? '',
+      startTime: startTime,
+      endTime: endTime,
+      description: json['description']?.toString().isEmpty ?? true
+          ? null
+          : json['description']?.toString(),
+    );
+  }
+
   ItineraryEvent copyWith({
     String? id,
     String? title,

@@ -5,6 +5,7 @@ import 'package:tripwise/data/config/colors.dart';
 import 'package:tripwise/data/config/text_styles.dart';
 import '../../model/trip_model.dart';
 import '../../model/itinerary_model.dart';
+import '../../controller/itinerary_controller.dart';
 
 class ItineraryView extends StatefulWidget {
   final Trip trip;
@@ -16,84 +17,102 @@ class ItineraryView extends StatefulWidget {
 }
 
 class _ItineraryViewState extends State<ItineraryView> {
-  late List<DayItinerary> itinerary;
+  late final ItineraryController _itineraryController;
 
   @override
   void initState() {
     super.initState();
-    itinerary = _getSampleItinerary();
+    _itineraryController = Get.put(ItineraryController());
+    _fetchItinerary();
+  }
+
+  Future<void> _fetchItinerary() async {
+    await _itineraryController.fetchItinerary(
+      widget.trip.tripName,
+      widget.trip.startDate,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
-      body: Column(
-        children: [
-          // Content
-          Expanded(
-            child: itinerary.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.event_note,
-                          size: 64,
-                          color: const Color(0xffCCCCCC),
-                        ),
-                        const SizedBox(height: 16),
-                        robotoText(
-                          "No itinerary planned yet",
-                          fontSize: 16,
-                          color: const Color(0xff888888),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () => _showAddEditEventSheet(),
-                          child: robotoText(
-                            "Add Events",
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: darkTeal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Itinerary Header
-                        robotoText(
-                          "Schedule",
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xff888888),
-                        ),
-                        const SizedBox(height: 16),
+      body: Obx(() {
+        if (_itineraryController.isLoading.value) {
+          return const Center(
+            child: CircularProgressIndicator(color: darkTeal),
+          );
+        }
 
-                        // Itinerary Days
-                        ...List.generate(
-                          itinerary.length,
-                          (index) => Padding(
-                            padding: const EdgeInsets.only(bottom: 24),
-                            child: _DayItineraryCard(
-                              dayItinerary: itinerary[index],
-                              dayNumber: index + 1,
-                              onEdit: (event) => _editEvent(event),
-                              onDelete: (eventId) => _deleteEvent(eventId),
+        final itinerary = _itineraryController.itinerary;
+
+        return Column(
+          children: [
+            // Content
+            Expanded(
+              child: itinerary.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.event_note,
+                            size: 64,
+                            color: const Color(0xffCCCCCC),
+                          ),
+                          const SizedBox(height: 16),
+                          robotoText(
+                            "No itinerary planned yet",
+                            fontSize: 16,
+                            color: const Color(0xff888888),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => _showAddEditEventSheet(),
+                            child: robotoText(
+                              "Add Events",
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: darkTeal,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Itinerary Header
+                          robotoText(
+                            "Schedule",
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xff888888),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Itinerary Days
+                          ...List.generate(
+                            itinerary.length,
+                            (index) => Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: _DayItineraryCard(
+                                dayItinerary: itinerary[index],
+                                dayNumber: index + 1,
+                                onEdit: (event) => _editEvent(event),
+                                onDelete: (eventId) => _deleteEvent(eventId),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-          ),
-        ],
-      ),
+            ),
+          ],
+        );
+      }),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditEventSheet(),
         backgroundColor: darkTeal,
@@ -531,7 +550,7 @@ class _ItineraryViewState extends State<ItineraryView> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (titleController.text.trim().isEmpty ||
                                 locationController.text.trim().isEmpty) {
                               Get.snackbar(
@@ -568,86 +587,69 @@ class _ItineraryViewState extends State<ItineraryView> {
                               return;
                             }
 
-                            setState(() {
-                              if (isEditing) {
-                                // Update existing event
-                                for (var day in itinerary) {
-                                  final eventIndex = day.events.indexWhere(
-                                    (e) => e.id == existingEvent.id,
-                                  );
-                                  if (eventIndex != -1) {
-                                    day.events[eventIndex] = existingEvent
-                                        .copyWith(
-                                          title: titleController.text.trim(),
-                                          location: locationController.text
-                                              .trim(),
-                                          startTime: startDateTime,
-                                          endTime: endDateTime,
-                                          description:
-                                              descriptionController.text
-                                                  .trim()
-                                                  .isEmpty
-                                              ? null
-                                              : descriptionController.text
-                                                    .trim(),
-                                        );
-                                    break;
-                                  }
-                                }
-                              } else {
-                                // Add new event
-                                final newEvent = ItineraryEvent(
-                                  id: DateTime.now().millisecondsSinceEpoch
-                                      .toString(),
-                                  title: titleController.text.trim(),
-                                  location: locationController.text.trim(),
-                                  startTime: startDateTime,
-                                  endTime: endDateTime,
-                                  description:
-                                      descriptionController.text.trim().isEmpty
-                                      ? null
-                                      : descriptionController.text.trim(),
-                                );
+                            if (isEditing) {
+                              // Update existing event
+                              final updatedEvent = existingEvent.copyWith(
+                                title: titleController.text.trim(),
+                                location: locationController.text.trim(),
+                                startTime: startDateTime,
+                                endTime: endDateTime,
+                                description:
+                                    descriptionController.text.trim().isEmpty
+                                    ? null
+                                    : descriptionController.text.trim(),
+                              );
+                              _itineraryController.updateEvent(updatedEvent);
 
-                                // Find or create day itinerary
-                                final dayIndex = itinerary.indexWhere(
-                                  (day) =>
-                                      day.date.year == selectedDate.year &&
-                                      day.date.month == selectedDate.month &&
-                                      day.date.day == selectedDate.day,
-                                );
+                              Get.back();
+                              Get.snackbar(
+                                'Success',
+                                'Event updated successfully',
+                                backgroundColor: Colors.green,
+                                colorText: Colors.white,
+                              );
+                            } else {
+                              // Add new event via API
+                              final dayNumber =
+                                  selectedDate
+                                      .difference(widget.trip.startDate)
+                                      .inDays +
+                                  1;
 
-                                if (dayIndex != -1) {
-                                  itinerary[dayIndex].events.add(newEvent);
-                                  // Sort events by start time
-                                  itinerary[dayIndex].events.sort(
-                                    (a, b) =>
-                                        a.startTime.compareTo(b.startTime),
+                              // Format time as HH:MM:SS
+                              final startTimeStr =
+                                  '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00';
+                              final endTimeStr =
+                                  '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}:00';
+
+                              Get.back();
+
+                              final success = await _itineraryController
+                                  .addEvent(
+                                    tripName: widget.trip.tripName,
+                                    tripStartDate: widget.trip.startDate,
+                                    dayNumber: dayNumber,
+                                    title: titleController.text.trim(),
+                                    description:
+                                        descriptionController.text
+                                            .trim()
+                                            .isEmpty
+                                        ? ''
+                                        : descriptionController.text.trim(),
+                                    location: locationController.text.trim(),
+                                    startTime: startTimeStr,
+                                    endTime: endTimeStr,
                                   );
-                                } else {
-                                  itinerary.add(
-                                    DayItinerary(
-                                      date: selectedDate,
-                                      events: [newEvent],
-                                    ),
-                                  );
-                                  // Sort days by date
-                                  itinerary.sort(
-                                    (a, b) => a.date.compareTo(b.date),
-                                  );
-                                }
+
+                              if (success) {
+                                Get.snackbar(
+                                  'Success',
+                                  'Event added successfully',
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
+                                );
                               }
-                            });
-
-                            Get.back();
-                            Get.snackbar(
-                              'Success',
-                              isEditing
-                                  ? 'Event updated successfully'
-                                  : 'Event added successfully',
-                              backgroundColor: Colors.green,
-                              colorText: Colors.white,
-                            );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: darkTeal,
@@ -726,11 +728,7 @@ class _ItineraryViewState extends State<ItineraryView> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        setState(() {
-                          for (var day in itinerary) {
-                            day.events.removeWhere((e) => e.id == eventId);
-                          }
-                        });
+                        _itineraryController.deleteEvent(eventId);
                         Get.back();
                         Get.snackbar(
                           'Success',
@@ -760,135 +758,6 @@ class _ItineraryViewState extends State<ItineraryView> {
         ),
       ),
     );
-  }
-
-  List<DayItinerary> _getSampleItinerary() {
-    // Sample data for demonstration
-    final startDate = widget.trip.startDate;
-
-    return [
-      DayItinerary(
-        date: startDate,
-        events: [
-          ItineraryEvent(
-            id: '1',
-            title: 'Airport Pickup',
-            location: 'Goa International Airport',
-            startTime: startDate.copyWith(hour: 10, minute: 0),
-            endTime: startDate.copyWith(hour: 11, minute: 0),
-            description:
-                'Meet at arrival gate. Driver will hold a sign with your name.',
-          ),
-          ItineraryEvent(
-            id: '2',
-            title: 'Check-in at Hotel',
-            location: 'Taj Fort Aguada Resort & Spa',
-            startTime: startDate.copyWith(hour: 12, minute: 0),
-            endTime: startDate.copyWith(hour: 13, minute: 0),
-          ),
-          ItineraryEvent(
-            id: '3',
-            title: 'Lunch at Beach Shack',
-            location: 'Baga Beach',
-            startTime: startDate.copyWith(hour: 14, minute: 0),
-            endTime: startDate.copyWith(hour: 16, minute: 0),
-            description: 'Try the seafood platter and fresh coconut water.',
-          ),
-          ItineraryEvent(
-            id: '4',
-            title: 'Sunset at Chapora Fort',
-            location: 'Chapora Fort, Vagator',
-            startTime: startDate.copyWith(hour: 17, minute: 30),
-            endTime: startDate.copyWith(hour: 19, minute: 0),
-            description:
-                'Famous from Dil Chahta Hai. Great views of the coastline.',
-          ),
-        ],
-      ),
-      DayItinerary(
-        date: startDate.add(const Duration(days: 1)),
-        events: [
-          ItineraryEvent(
-            id: '5',
-            title: 'Breakfast',
-            location: 'Hotel Restaurant',
-            startTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 8, minute: 0),
-            endTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 9, minute: 0),
-          ),
-          ItineraryEvent(
-            id: '6',
-            title: 'Water Sports',
-            location: 'Calangute Beach',
-            startTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 10, minute: 0),
-            endTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 13, minute: 0),
-            description: 'Parasailing, jet skiing, and banana boat rides.',
-          ),
-          ItineraryEvent(
-            id: '7',
-            title: 'Old Goa Heritage Tour',
-            location: 'Basilica of Bom Jesus',
-            startTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 15, minute: 0),
-            endTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 18, minute: 0),
-            description: 'Visit UNESCO World Heritage churches and cathedrals.',
-          ),
-          ItineraryEvent(
-            id: '8',
-            title: 'Dinner Cruise',
-            location: 'Mandovi River',
-            startTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 19, minute: 30),
-            endTime: startDate
-                .add(const Duration(days: 1))
-                .copyWith(hour: 22, minute: 0),
-            description: 'Evening cruise with live music and buffet dinner.',
-          ),
-        ],
-      ),
-      DayItinerary(
-        date: startDate.add(const Duration(days: 2)),
-        events: [
-          ItineraryEvent(
-            id: '9',
-            title: 'Dudhsagar Waterfall Trek',
-            location: 'Dudhsagar Falls',
-            startTime: startDate
-                .add(const Duration(days: 2))
-                .copyWith(hour: 7, minute: 0),
-            endTime: startDate
-                .add(const Duration(days: 2))
-                .copyWith(hour: 14, minute: 0),
-            description:
-                'Full day trek to one of India\'s tallest waterfalls. Pack lunch included.',
-          ),
-          ItineraryEvent(
-            id: '10',
-            title: 'Spice Plantation Visit',
-            location: 'Sahakari Spice Farm',
-            startTime: startDate
-                .add(const Duration(days: 2))
-                .copyWith(hour: 15, minute: 30),
-            endTime: startDate
-                .add(const Duration(days: 2))
-                .copyWith(hour: 17, minute: 30),
-            description:
-                'Guided tour of organic spice plantation with traditional Goan lunch.',
-          ),
-        ],
-      ),
-    ];
   }
 }
 

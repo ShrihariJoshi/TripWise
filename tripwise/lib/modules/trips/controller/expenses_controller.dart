@@ -31,9 +31,10 @@ class ExpensesController extends GetxController {
 
       final body = {
         'trip_name': tripName,
+        'description': name,
         'amount': amount,
         'paid_by': paidBy,
-        'date': date.toIso8601String().split('T')[0], // Format: YYYY-MM-DD
+        'date': date.toIso8601String().split('T')[0],
         'shares': shares,
       };
 
@@ -76,8 +77,8 @@ class ExpensesController extends GetxController {
         queryParameters: {'trip_name': tripName},
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        final expensesList = response.data['expenses'] as List<dynamic>?;
+      if (response['expenses'] != null) {
+        final expensesList = response['expenses'] as List<dynamic>?;
         if (expensesList != null) {
           expenses.value = expensesList
               .map((e) => Expense.fromJson(e as Map<String, dynamic>))
@@ -107,8 +108,8 @@ class ExpensesController extends GetxController {
         queryParameters: {'trip_name': tripName},
       );
 
-      if (response.statusCode == 200 && response.data != null) {
-        final settlementsList = response.data['settlements'] as List<dynamic>?;
+      if (response['settlements'] != null) {
+        final settlementsList = response['settlements'] as List<dynamic>?;
         if (settlementsList != null) {
           settlements.value = settlementsList
               .map((e) => Settlement.fromJson(e as Map<String, dynamic>))
@@ -126,6 +127,35 @@ class ExpensesController extends GetxController {
       );
     } finally {
       isLoadingSettlements.value = false;
+    }
+  }
+
+  /// Mark settlement as done
+  Future<bool> markSettlementAsDone(
+    String settlementId,
+    String tripName,
+  ) async {
+    try {
+      final body = {'settlement_id': int.parse(settlementId)};
+
+      final response = await api.post('/mark-done', body: body);
+
+      if (response['message'] != null) {
+        // Refresh settlements after marking as done
+        await fetchSettlements(tripName);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      Get.log('Failed to mark settlement as done: ${e.toString()}');
+      Get.snackbar(
+        'Error',
+        'Failed to mark settlement as done: ${e.toString()}',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Get.theme.colorScheme.error,
+        colorText: Get.theme.colorScheme.onError,
+      );
+      return false;
     }
   }
 }

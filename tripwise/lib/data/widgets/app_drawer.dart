@@ -104,26 +104,26 @@ class AppDrawer extends StatelessWidget {
           //     Get.back();
           //   },
           // ),
-          _DrawerItem(
-            icon: Icons.person_add_alt_outlined,
-            label: "Requests",
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: robotoText(
-                "3",
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            onTap: () {
-              Get.back();
-            },
-          ),
+          // _DrawerItem(
+          //   icon: Icons.person_add_alt_outlined,
+          //   label: "Requests",
+          //   trailing: Container(
+          //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          //     decoration: BoxDecoration(
+          //       color: Colors.red,
+          //       borderRadius: BorderRadius.circular(12),
+          //     ),
+          //     child: robotoText(
+          //       "3",
+          //       fontSize: 12,
+          //       fontWeight: FontWeight.bold,
+          //       color: Colors.white,
+          //     ),
+          //   ),
+          //   onTap: () {
+          //     Get.back();
+          //   },
+          // ),
 
           // const Divider(height: 1, indent: 16, endIndent: 16),
           _DrawerItem(
