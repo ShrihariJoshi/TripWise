@@ -1,12 +1,32 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CacheService extends GetConnect {
   late SharedPreferences _prefs;
+
+  final FlutterSecureStorage _store = const FlutterSecureStorage();
+
+  static const _kAccess = 'access_token';
+  static const _kRefresh = 'refresh_token';
+  static const _kShort = 'short_lived_token';
+
+  Future<void> saveAccessToken(String token) =>
+      _store.write(key: _kAccess, value: token);
+  Future<void> saveRefreshToken(String token) =>
+      _store.write(key: _kRefresh, value: token);
+  Future<void> saveShortLivedToken(String token) =>
+      _store.write(key: _kShort, value: token);
+
+  Future<String?> readAccessToken() => _store.read(key: _kAccess);
+  Future<String?> readRefreshToken() => _store.read(key: _kRefresh);
+  Future<String?> readShortLivedToken() => _store.read(key: _kShort);
+
+  Future<void> clearAll() => _store.deleteAll();
 
   String? _accessToken;
   String? _refreshToken;
@@ -21,17 +41,19 @@ class CacheService extends GetConnect {
   }
 
   Future<void> fetchTokensFromCache() async {
-    _accessToken = _prefs.getString("accessToken");
-    _refreshToken = _prefs.getString("refreshToken");
-    _shortLivedToken = _prefs.getString("shortLivedToken");
+    readAccessToken();
+    readRefreshToken();
+    readShortLivedToken();
     debugPrint(
-        'Access: $_accessToken, Refresh: $_refreshToken, ShortLived: $_shortLivedToken');
+      'Access: $_accessToken, Refresh: $_refreshToken, ShortLived: $_shortLivedToken',
+    );
   }
 
-  Future<void> saveTokensToCache(
-      {String? accessToken,
-      String? refreshToken,
-      String? shortLivedToken}) async {
+  Future<void> saveTokensToCache({
+    String? accessToken,
+    String? refreshToken,
+    String? shortLivedToken,
+  }) async {
     if (accessToken != null && accessToken.isNotEmpty) {
       await _prefs.setString("accessToken", accessToken);
       _accessToken = accessToken;
@@ -57,7 +79,8 @@ class CacheService extends GetConnect {
 
   bool get isTest => _test ?? false;
 
-  bool get ifNoTokenExists => (_accessToken == null &&
+  bool get ifNoTokenExists =>
+      (_accessToken == null &&
       _refreshToken == null &&
       _shortLivedToken == null);
 

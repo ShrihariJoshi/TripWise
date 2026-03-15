@@ -1,11 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
+import 'package:tripwise/data/config/tripwise.dart';
+import 'package:tripwise/data/services/api_service.dart';
 import 'package:tripwise/data/services/cache_service.dart';
 
-const String _backendBaseUrl = 'http://127.0.0.1:5000';
-
 class AuthController extends GetxController {
+  final _backendBaseUrl = Tripwise.baseUrl;
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final emailController = TextEditingController();
@@ -33,9 +34,11 @@ class AuthController extends GetxController {
     }
 
     try {
-      final resp = await _dio.post('$_backendBaseUrl/login',
-          data: {'email': email, 'password': password},
-          options: Options(headers: {'Content-Type': 'application/json'}));
+      final resp = await _dio.post(
+        '$_backendBaseUrl/login',
+        data: {'email': email, 'password': password},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
 
       if (resp.statusCode == 200) {
         final data = resp.data as Map<String, dynamic>;
@@ -43,8 +46,9 @@ class AuthController extends GetxController {
         if (token != null) {
           // persist token to CacheService (SharedPreferences)
           try {
-            await Get.find<CacheService>()
-                .saveTokensToCache(accessToken: token);
+            await Get.find<CacheService>().saveTokensToCache(
+              accessToken: token,
+            );
           } catch (e) {
             // Fall back to showing success even if cache save fails
             Get.log('Failed to save token to cache: $e');
@@ -105,14 +109,16 @@ class AuthController extends GetxController {
     }
 
     try {
-      final resp = await _dio.post('$_backendBaseUrl/register',
-          data: {
-            'username': username,
-            'email': email,
-            'phone': phone,
-            'password': password,
-          },
-          options: Options(headers: {'Content-Type': 'application/json'}));
+      final resp = await _dio.post(
+        '$_backendBaseUrl/register',
+        data: {
+          'username': username,
+          'email': email,
+          'phone': phone,
+          'password': password,
+        },
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
 
       if (resp.statusCode == 201 || resp.statusCode == 200) {
         Get.snackbar('Success', 'Registered successfully');

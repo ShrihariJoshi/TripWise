@@ -43,3 +43,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+.venv/
+.env
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+
+# FVM Version Cache
+.fvm/

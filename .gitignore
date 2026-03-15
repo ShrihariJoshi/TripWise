@@ -1,7 +1,7 @@
-__pycache__/
+**__pycache__/
 *.py[cod]
 *$py.class
-
+*.pyc
 # Environment variables
 .env
 .env.*
@@ -20,6 +20,7 @@ ENV/
 instance/
 *.db
 *.sqlite3
+__pycache__/
 
 # Logs
 *.log
