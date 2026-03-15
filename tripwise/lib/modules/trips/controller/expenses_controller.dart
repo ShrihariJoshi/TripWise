@@ -103,12 +103,9 @@ class ExpensesController extends GetxController {
   Future<void> fetchSettlements(String tripName) async {
     try {
       isLoadingSettlements.value = true;
-      final response = await api.get(
-        '/splits',
-        queryParameters: {'trip_name': tripName},
-      );
+      final response = await api.get('/splits?trip_name=$tripName');
 
-      if (response['settlements'] != null) {
+      if (response is Map<String, dynamic> && response['settlements'] != null) {
         final settlementsList = response['settlements'] as List<dynamic>?;
         if (settlementsList != null) {
           settlements.value = settlementsList
