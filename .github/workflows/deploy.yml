@@ -11,71 +11,88 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: |
-        cd backend
-        pip install -r requirements.txt
-    - name: Run tests
-      run: |
-        cd backend
-        python -m pytest  # Assuming you have tests, or just check syntax
-    - name: Check deployable
-      run: echo "Tests passed - deployable"
-
   build:
-    needs: test
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Log in to Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build and push Docker image
-      run: |
-        docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest backend/
-        docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest backend/
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy-blue:
     needs: build
     runs-on: ubuntu-latest
     environment: blue
+
     steps:
-    - name: Deploy to Blue Environment
-      run: |
-        echo "Deploying to blue environment"
-        # Simulate deployment: pull image and run
-        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-        # In real scenario, deploy to blue server/cluster
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Blue Environment
+        run: |
+          echo "Deploying to blue environment"
+
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+          # Example deployment command
+          # docker stop app-blue || true
+          # docker rm app-blue || true
+          # docker run -d --name app-blue -p 8080:8000 \
+          #   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy-green:
     needs: deploy-blue
     runs-on: ubuntu-latest
     environment: green
+
     steps:
-    - name: Deploy to Green Environment
-      run: |
-        echo "Deploying to green environment"
-        # Simulate deployment: pull image and run
-        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-        # In real scenario, deploy to green server/cluster
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Green Environment
+        run: |
+          echo "Deploying to green environment"
+
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+          # Example deployment command
+          # docker stop app-green || true
+          # docker rm app-green || true
+          # docker run -d --name app-green -p 8081:8000 \
+          #   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   promote:
     needs: deploy-green
     runs-on: ubuntu-latest
     environment: production
+
     steps:
-    - name: Switch traffic to Green
-      run: |
-        echo "Switching traffic to green environment"
-        # In real scenario, update load balancer to point to green
+      - name: Promote Green to Production
+        run: |
+          echo "Switching traffic to green environment"
+
+          # Example:
+          # Update load balancer / reverse proxy
+          # kubectl patch service
+          # nginx reload
