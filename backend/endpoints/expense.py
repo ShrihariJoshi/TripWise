@@ -1,7 +1,9 @@
 from flask import request, jsonify
 from db import get_db_connection
+import os
 
 EPS = 0.01
+SMART_SPLIT_ENABLED = os.getenv('SMART_SPLIT_ENABLED', 'true').lower() == 'true'
 
 def expense_handler():
     data = request.get_json() or {}
@@ -124,8 +126,14 @@ def update_settlement_for_trip(trip_id, cur):
     creditors = [(u, a) for u, a in net.items() if a > EPS]
     debtors = [(u, a) for u, a in net.items() if a < -EPS]
 
-    creditors.sort(key=lambda x: x[1], reverse=True)
-    debtors.sort(key=lambda x: x[1])
+    if SMART_SPLIT_ENABLED:
+        # Smart split: greedy algorithm - sort by amount descending for creditors, ascending for debtors
+        creditors.sort(key=lambda x: x[1], reverse=True)
+        debtors.sort(key=lambda x: x[1])
+    else:
+        # Std split: sort by user id ascending for both
+        creditors.sort(key=lambda x: x[0])
+        debtors.sort(key=lambda x: x[0])
 
     # Greedy settlement algorithm
     i = j = 0
